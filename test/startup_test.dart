@@ -44,11 +44,11 @@ void main() {
   testWidgets('the splash shows first, then the shell', (tester) async {
     await tester.pumpWidget(MaterialApp(home: SplashGate(store: store)));
 
-    expect(find.text('Inventory Scanner'), findsOneWidget);
+    expect(find.text('INVENTORY SCANNER'), findsOneWidget);
 
     await settleThroughStorage(tester, find.text('Count'));
 
-    expect(find.text('Inventory Scanner'), findsNothing);
+    expect(find.text('INVENTORY SCANNER'), findsNothing);
     expect(find.text('Count'), findsOneWidget);
   });
 

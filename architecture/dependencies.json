@@ -8,6 +8,11 @@
       "flutter_bloc",
       "equatable"
     ],
-    "dev_dependencies": ["flutter_test", "flutter_lints"]
+    "dev_dependencies": [
+      "flutter_test",
+      "flutter_lints",
+      "flutter_launcher_icons",
+      "flutter_native_splash"
+    ]
   }
 }
