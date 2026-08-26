@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
-import 'shell/app_shell.dart';
-import 'store/count_store.dart';
+import 'services/local_store.dart';
+import 'shell/splash_gate.dart';
 import 'theme/app_theme.dart';
 
-void main() {
-  runApp(BilangApp(store: CountStore()));
+Future<void> main() async {
+  final store = await LocalStore.openForApp();
+  runApp(BilangApp(store: store));
 }
 
 class BilangApp extends StatelessWidget {
   const BilangApp({super.key, required this.store});
 
-  final CountStore store;
+  final LocalStore store;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +20,7 @@ class BilangApp extends StatelessWidget {
       title: 'Inventory Scanner',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.build(),
-      home: AppShell(store: store),
+      home: SplashGate(store: store),
     );
   }
 }

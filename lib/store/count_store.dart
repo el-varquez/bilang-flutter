@@ -1,47 +1,59 @@
 import 'package:flutter/foundation.dart';
 
+import '../services/local_store.dart';
 import '../types/count_session.dart';
+import '../types/count_summary.dart';
 import '../types/scan_row.dart';
 
 class CountStore extends ChangeNotifier {
-  final List<CountSession> _sessions = <CountSession>[];
+  CountStore(this._storage);
+
+  final LocalStore _storage;
   final List<String> _scanHistory = <String>[];
-  String? _activeId;
+  List<CountSummary> _summaries = const <CountSummary>[];
+  CountSession? _active;
 
-  List<CountSession> get sessions => List.unmodifiable(_sessions);
+  List<CountSummary> get summaries => _summaries;
 
-  CountSession? get active {
-    for (final session in _sessions) {
-      if (session.id == _activeId) return session;
-    }
-    return null;
-  }
+  CountSession? get active => _active;
 
   bool get canUndo => _scanHistory.isNotEmpty;
 
-  CountSession startCount(String name, {required DateTime at}) {
-    final current = active;
-    if (current != null) current.open = false;
+  Future<void> hydrate() async {
+    _summaries = _storage.summaries();
+    final id = _storage.activeCountId;
+    _active = id == null ? null : await _storage.loadSession(id);
+    notifyListeners();
+  }
+
+  Future<void> startCount(String name, {required DateTime at}) async {
+    final current = _active;
+    if (current != null) {
+      current.open = false;
+      await _storage.saveSession(current);
+    }
     final session = CountSession(
       id: at.microsecondsSinceEpoch.toString(),
       name: name,
       startedAt: at,
     );
-    _sessions.insert(0, session);
-    _activeId = session.id;
+    _active = session;
     _scanHistory.clear();
-    notifyListeners();
-    return session;
-  }
-
-  void openCount(String id) {
-    _activeId = id;
-    _scanHistory.clear();
+    await _storage.saveSession(session);
+    await _storage.setActiveCountId(session.id);
+    _summaries = _storage.summaries();
     notifyListeners();
   }
 
-  void recordScan(String barcode, {String? name, int units = 1}) {
-    final session = active;
+  Future<void> openCount(String id) async {
+    _active = await _storage.loadSession(id);
+    _scanHistory.clear();
+    await _storage.setActiveCountId(id);
+    notifyListeners();
+  }
+
+  Future<void> recordScan(String barcode, {String? name, int units = 1}) async {
+    final session = _active;
     if (session == null || !session.open) return;
     final index = session.rows.indexWhere((row) => row.barcode == barcode);
     if (index >= 0) {
@@ -51,11 +63,11 @@ class CountStore extends ChangeNotifier {
       session.rows.add(ScanRow(barcode: barcode, name: name, qty: units));
     }
     _scanHistory.add(barcode);
-    notifyListeners();
+    await _persist(session);
   }
 
-  void undoLastScan({int units = 1}) {
-    final session = active;
+  Future<void> undoLastScan({int units = 1}) async {
+    final session = _active;
     if (session == null || _scanHistory.isEmpty) return;
     final barcode = _scanHistory.removeLast();
     final index = session.rows.indexWhere((row) => row.barcode == barcode);
@@ -66,11 +78,11 @@ class CountStore extends ChangeNotifier {
     } else {
       session.rows[index] = row.copyWith(qty: row.qty - units);
     }
-    notifyListeners();
+    await _persist(session);
   }
 
-  void setQuantity(String barcode, int qty) {
-    final session = active;
+  Future<void> setQuantity(String barcode, int qty) async {
+    final session = _active;
     if (session == null) return;
     final index = session.rows.indexWhere((row) => row.barcode == barcode);
     if (index < 0) return;
@@ -79,6 +91,12 @@ class CountStore extends ChangeNotifier {
     } else {
       session.rows[index] = session.rows[index].copyWith(qty: qty);
     }
+    await _persist(session);
+  }
+
+  Future<void> _persist(CountSession session) async {
+    await _storage.saveSession(session);
+    _summaries = _storage.summaries();
     notifyListeners();
   }
 }
