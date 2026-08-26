@@ -4,13 +4,10 @@ import '../features/count/screens/count_screen.dart';
 import '../features/counts/screens/counts_screen.dart';
 import '../features/export/screens/export_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
-import '../store/count_store.dart';
 import '../theme/tokens.dart';
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.store});
-
-  final CountStore store;
+  const AppShell({super.key});
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -22,9 +19,9 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final screens = <Widget>[
-      CountScreen(store: widget.store),
-      CountsScreen(store: widget.store),
-      ExportScreen(store: widget.store),
+      const CountScreen(),
+      const CountsScreen(),
+      const ExportScreen(),
       const SettingsScreen(),
     ];
 

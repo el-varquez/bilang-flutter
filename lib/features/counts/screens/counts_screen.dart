@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../store/count_store.dart';
+import '../../../store/count_cubit.dart';
+import '../../../store/count_state.dart';
 import '../../../theme/tokens.dart';
 
 class CountsScreen extends StatelessWidget {
-  const CountsScreen({super.key, required this.store});
-
-  final CountStore store;
+  const CountsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: store,
-      builder: (context, _) {
-        final sessions = store.summaries;
+    return BlocBuilder<CountCubit, CountState>(
+      builder: (context, state) {
+        final sessions = state.summaries;
         if (sessions.isEmpty) {
           return const Center(
             child: Text('No counts yet', style: TextStyle(color: Tokens.ink2)),
@@ -29,7 +28,7 @@ class CountsScreen extends StatelessWidget {
               subtitle: Text(
                 '${session.itemCount} items · ${session.unitCount} units',
               ),
-              onTap: () => store.openCount(session.id),
+              onTap: () => context.read<CountCubit>().openCount(session.id),
             );
           },
         );

@@ -3,10 +3,11 @@ import 'dart:io';
 import 'package:bilang/services/local_store.dart';
 import 'package:bilang/shell/app_shell.dart';
 import 'package:bilang/shell/splash_gate.dart';
-import 'package:bilang/store/count_store.dart';
+import 'package:bilang/store/count_cubit.dart';
 import 'package:bilang/types/count_session.dart';
 import 'package:bilang/types/scan_row.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive_ce.dart';
 
@@ -62,34 +63,46 @@ void main() {
         ),
       );
       await store.setActiveCountId('s1');
-      final hydrated = CountStore(store);
+      final hydrated = CountCubit(store);
       await hydrated.hydrate();
       return hydrated;
     }))!;
 
-    await tester.pumpWidget(MaterialApp(home: AppShell(store: counts)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider<CountCubit>.value(
+          value: counts,
+          child: const AppShell(),
+        ),
+      ),
+    );
 
     expect(find.textContaining('Bodega count'), findsOneWidget);
     expect(find.textContaining('24 units'), findsOneWidget);
+
+    await counts.close();
   });
 
-  test('the store hydrates the active session and writes scans through', () async {
-    final counts = CountStore(store);
+  test('the cubit hydrates the active session and writes scans through', () async {
+    final counts = CountCubit(store);
     await counts.hydrate();
 
     await counts.startCount('Bodega count', at: DateTime(2026, 8, 26));
     await counts.recordScan('4800888812345', name: 'Kopiko Blanca Twin');
     await counts.recordScan('4800888812345');
+    await counts.close();
     await store.close();
 
     final reopened = await LocalStore.open();
     await reopened.hydrate();
-    final revived = CountStore(reopened);
+    final revived = CountCubit(reopened);
     await revived.hydrate();
 
-    expect(revived.active, isNotNull);
-    expect(revived.active!.name, 'Bodega count');
-    expect(revived.active!.units, 2);
-    expect(revived.summaries.single.unitCount, 2);
+    expect(revived.state.active, isNotNull);
+    expect(revived.state.active!.name, 'Bodega count');
+    expect(revived.state.active!.units, 2);
+    expect(revived.state.summaries.single.unitCount, 2);
+
+    await revived.close();
   });
 }
