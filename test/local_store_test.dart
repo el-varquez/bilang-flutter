@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:bilang/services/local_store.dart';
+import 'package:bilang/types/count_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive_ce.dart';
 
@@ -54,5 +55,16 @@ void main() {
 
     final recovered = await LocalStore.open();
     expect(recovered.vibrate, isTrue);
+  });
+
+  test('touching counts before hydrate throws instead of silently doing nothing', () async {
+    expect(() => store.summaries(), throwsStateError);
+    await expectLater(store.loadSession('s1'), throwsStateError);
+    await expectLater(
+      store.saveSession(
+        CountSession(id: 's1', name: 'Nope', startedAt: DateTime(2026, 8, 27)),
+      ),
+      throwsStateError,
+    );
   });
 }

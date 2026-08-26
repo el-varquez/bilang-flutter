@@ -90,10 +90,24 @@ class LocalStore {
     }
   }
 
-  List<CountSummary> summaries() {
+  Box get _requireIndex {
     final box = _index;
-    if (box == null) return const <CountSummary>[];
-    final list = box.values
+    if (box == null) {
+      throw StateError('LocalStore.hydrate() must run before reading counts');
+    }
+    return box;
+  }
+
+  LazyBox get _requireCounts {
+    final box = _counts;
+    if (box == null) {
+      throw StateError('LocalStore.hydrate() must run before reading counts');
+    }
+    return box;
+  }
+
+  List<CountSummary> summaries() {
+    final list = _requireIndex.values
         .map((raw) => CountSummary.fromJson(_json(raw as Map)))
         .toList();
     list.sort((a, b) => b.startedAt.compareTo(a.startedAt));
@@ -101,24 +115,24 @@ class LocalStore {
   }
 
   Future<CountSession?> loadSession(String id) async {
-    final raw = await _counts?.get(id);
+    final raw = await _requireCounts.get(id);
     if (raw == null) return null;
     return CountSession.fromJson(_json(raw as Map));
   }
 
   Future<void> saveSession(CountSession session) async {
-    await _counts?.put(session.id, session.toJson());
-    await _index?.put(session.id, CountSummary.of(session).toJson());
+    await _requireCounts.put(session.id, session.toJson());
+    await _requireIndex.put(session.id, CountSummary.of(session).toJson());
   }
 
   Future<void> deleteSession(String id) async {
-    await _counts?.delete(id);
-    await _index?.delete(id);
+    await _requireCounts.delete(id);
+    await _requireIndex.delete(id);
   }
 
   Future<void> deleteAllCounts() async {
-    await _counts?.clear();
-    await _index?.clear();
+    await _requireCounts.clear();
+    await _requireIndex.clear();
   }
 
   static Map<String, Object?> _json(Map raw) =>
