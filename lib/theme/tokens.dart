@@ -21,6 +21,9 @@ class Tokens {
   static const Color red = Color(0xFFB23A2E);
   static const Color gold = Color(0xFFB0823A);
 
+  static const Color shadowSm = Color(0x0F172E23);
+  static const Color overlay = Color(0x73121C17);
+
   static Color get greenSoft => green.withValues(alpha: 0.10);
   static Color get confirmSoft => confirm.withValues(alpha: 0.12);
   static Color get redSoft => red.withValues(alpha: 0.12);

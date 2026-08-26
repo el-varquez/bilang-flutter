@@ -13,8 +13,9 @@ if (!existsSync(tokensDart)) {
 } else {
   const dart = readFileSync(tokensDart, 'utf8').toUpperCase();
   for (const [name, value] of Object.entries(tokens)) {
+    const hex = value.slice(1).toUpperCase();
     const needle = value.startsWith('#')
-      ? `0XFF${value.slice(1).toUpperCase()}`
+      ? `0X${hex.length === 8 ? '' : 'FF'}${hex}`
       : value.toUpperCase();
     if (!dart.includes(needle)) {
       hits.push(`design/tokens.json: token "${name}" value ${value} not found in lib/theme/tokens.dart`);
