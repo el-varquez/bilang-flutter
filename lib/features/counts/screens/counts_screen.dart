@@ -13,7 +13,7 @@ class CountsScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: store,
       builder: (context, _) {
-        final sessions = store.sessions;
+        final sessions = store.summaries;
         if (sessions.isEmpty) {
           return const Center(
             child: Text('No counts yet', style: TextStyle(color: Tokens.ink2)),
@@ -26,7 +26,9 @@ class CountsScreen extends StatelessWidget {
             final session = sessions[index];
             return ListTile(
               title: Text(session.name),
-              subtitle: Text('${session.rows.length} items · ${session.units} units'),
+              subtitle: Text(
+                '${session.itemCount} items · ${session.unitCount} units',
+              ),
               onTap: () => store.openCount(session.id),
             );
           },
