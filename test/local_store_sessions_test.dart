@@ -116,4 +116,19 @@ void main() {
   test('an unknown id loads as null', () async {
     expect(await store.loadSession('nope'), isNull);
   });
+
+  test('sessions and rows compare by value', () {
+    const rowA = ScanRow(barcode: '111', name: 'Kopiko', qty: 2);
+    const rowB = ScanRow(barcode: '111', name: 'Kopiko', qty: 2);
+    expect(rowA, rowB);
+
+    final sessionA = sessionWith('s1', 'Bodega count', const [rowA]);
+    final sessionB = sessionWith('s1', 'Bodega count', const [rowB]);
+    expect(sessionA, sessionB);
+
+    expect(sessionA.copyWith(rows: const []), isNot(sessionA));
+    expect(sessionA.copyWith(open: false).open, isFalse);
+    expect(sessionA.copyWith(name: 'Renamed').name, 'Renamed');
+    expect(sessionA.copyWith(name: 'Renamed').rows, sessionA.rows);
+  });
 }

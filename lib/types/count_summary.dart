@@ -1,6 +1,8 @@
+import 'package:equatable/equatable.dart';
+
 import 'count_session.dart';
 
-class CountSummary {
+class CountSummary extends Equatable {
   const CountSummary({
     required this.id,
     required this.name,
@@ -43,4 +45,7 @@ class CountSummary {
     itemCount: json['itemCount']! as int,
     unitCount: json['unitCount']! as int,
   );
+
+  @override
+  List<Object?> get props => [id, name, startedAt, open, itemCount, unitCount];
 }

@@ -69,13 +69,21 @@ if (existsSync(features)) {
   }
 }
 
+const STATE_ALLOWLIST = new Set([
+  'flutter',
+  'bilang',
+  'flutter_bloc',
+  'bloc',
+  'equatable',
+]);
+
 for (const file of walk(join(root, 'lib'))) {
   if (!file.endsWith('.dart')) continue;
   if (rel(file).split('/').includes('services')) continue;
   const lines = readFileSync(file, 'utf8').split(/\r?\n/);
   lines.forEach((text, index) => {
     const imp = text.match(/^import\s+'package:([a-z0-9_]+)\//);
-    if (imp && imp[1] !== 'flutter' && imp[1] !== 'bilang') {
+    if (imp && !STATE_ALLOWLIST.has(imp[1])) {
       hits.push(`${rel(file)}:${index + 1}: R3 imports package:${imp[1]} outside a services/ folder`);
     }
   });

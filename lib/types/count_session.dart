@@ -1,21 +1,32 @@
+import 'package:equatable/equatable.dart';
+
 import 'scan_row.dart';
 
-class CountSession {
-  CountSession({
+class CountSession extends Equatable {
+  const CountSession({
     required this.id,
     required this.name,
     required this.startedAt,
     this.open = true,
-    List<ScanRow>? rows,
-  }) : rows = rows ?? <ScanRow>[];
+    this.rows = const <ScanRow>[],
+  });
 
   final String id;
   final String name;
   final DateTime startedAt;
+  final bool open;
   final List<ScanRow> rows;
-  bool open;
 
   int get units => rows.fold(0, (sum, row) => sum + row.qty);
+
+  CountSession copyWith({String? name, bool? open, List<ScanRow>? rows}) =>
+      CountSession(
+        id: id,
+        name: name ?? this.name,
+        startedAt: startedAt,
+        open: open ?? this.open,
+        rows: rows ?? this.rows,
+      );
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -34,4 +45,7 @@ class CountSession {
         .map((item) => ScanRow.fromJson(item! as Map<String, Object?>))
         .toList(),
   );
+
+  @override
+  List<Object?> get props => [id, name, startedAt, open, rows];
 }
