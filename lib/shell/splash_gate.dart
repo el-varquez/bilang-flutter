@@ -16,8 +16,6 @@ class SplashGate extends StatefulWidget {
 }
 
 class _SplashGateState extends State<SplashGate> {
-  static const Duration _minimumSplash = Duration(milliseconds: 600);
-
   CountCubit? _counts;
 
   @override
@@ -32,8 +30,8 @@ class _SplashGateState extends State<SplashGate> {
     final counts = CountCubit(widget.store);
     await counts.hydrate();
     final elapsed = DateTime.now().difference(started);
-    if (elapsed < _minimumSplash) {
-      await Future<void>.delayed(_minimumSplash - elapsed);
+    if (elapsed < SplashScreen.hold) {
+      await Future<void>.delayed(SplashScreen.hold - elapsed);
     }
     if (!mounted) {
       await counts.close();
