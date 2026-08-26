@@ -1,0 +1,6 @@
+{
+  "pubspec.yaml": {
+    "dependencies": ["flutter", "cupertino_icons"],
+    "dev_dependencies": ["flutter_test", "flutter_lints"]
+  }
+}
