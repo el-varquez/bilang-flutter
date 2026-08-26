@@ -1,4 +1,6 @@
-class ScanRow {
+import 'package:equatable/equatable.dart';
+
+class ScanRow extends Equatable {
   const ScanRow({required this.barcode, this.name, this.qty = 1});
 
   final String barcode;
@@ -22,4 +24,7 @@ class ScanRow {
     name: json['name'] as String?,
     qty: json['qty']! as int,
   );
+
+  @override
+  List<Object?> get props => [barcode, name, qty];
 }
