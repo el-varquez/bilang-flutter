@@ -392,6 +392,25 @@ void main() {
     expect(field.enabled, isFalse);
   });
 
+  testWidgets('a fresh count does not overflow with the keyboard up', (
+    tester,
+  ) async {
+    await tester.runAsync(
+      () => cubit.startCount('Bodega count', at: DateTime(2026, 8, 27)),
+    );
+    tester.view.devicePixelRatio = 2.0;
+    tester.view.physicalSize = const Size(720, 1610);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 560);
+    tester.view.padding = const FakeViewPadding(top: 48, bottom: 0);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nothing counted yet'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('an open count can be scanned into', (tester) async {
     await tester.runAsync(
       () => cubit.startCount('Bodega count', at: DateTime(2026, 8, 27)),
