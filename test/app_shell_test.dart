@@ -10,16 +10,20 @@ import 'package:hive_ce/hive_ce.dart';
 
 void main() {
   late Directory dir;
+  late LocalStore storage;
   late CountCubit counts;
 
   Widget shell(CountCubit cubit) => MaterialApp(
-    home: BlocProvider<CountCubit>.value(value: cubit, child: const AppShell()),
+    home: BlocProvider<CountCubit>.value(
+      value: cubit,
+      child: AppShell(storage: storage, cameraEnabled: false),
+    ),
   );
 
   setUp(() async {
     dir = await Directory.systemTemp.createTemp('bilang_test_');
     Hive.init(dir.path);
-    final storage = await LocalStore.open();
+    storage = await LocalStore.open();
     await storage.hydrate();
     counts = CountCubit(storage);
     await counts.hydrate();

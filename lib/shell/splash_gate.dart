@@ -7,9 +7,14 @@ import 'app_shell.dart';
 import 'splash_screen.dart';
 
 class SplashGate extends StatefulWidget {
-  const SplashGate({super.key, required this.store});
+  const SplashGate({
+    super.key,
+    required this.store,
+    this.cameraEnabled = true,
+  });
 
   final LocalStore store;
+  final bool cameraEnabled;
 
   @override
   State<SplashGate> createState() => _SplashGateState();
@@ -52,7 +57,10 @@ class _SplashGateState extends State<SplashGate> {
     if (counts == null) return const SplashScreen();
     return BlocProvider<CountCubit>.value(
       value: counts,
-      child: const AppShell(),
+      child: AppShell(
+        storage: widget.store,
+        cameraEnabled: widget.cameraEnabled,
+      ),
     );
   }
 }

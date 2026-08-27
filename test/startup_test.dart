@@ -42,7 +42,9 @@ void main() {
   });
 
   testWidgets('the splash shows first, then the shell', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: SplashGate(store: store)));
+    await tester.pumpWidget(
+      MaterialApp(home: SplashGate(store: store, cameraEnabled: false)),
+    );
 
     expect(find.text('INVENTORY SCANNER'), findsOneWidget);
 
@@ -72,12 +74,12 @@ void main() {
       MaterialApp(
         home: BlocProvider<CountCubit>.value(
           value: counts,
-          child: const AppShell(),
+          child: AppShell(storage: store, cameraEnabled: false),
         ),
       ),
     );
 
-    expect(find.textContaining('Bodega count'), findsOneWidget);
+    expect(find.textContaining('1 items'), findsOneWidget);
     expect(find.textContaining('24 units'), findsOneWidget);
 
     await counts.close();
