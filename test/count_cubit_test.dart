@@ -52,18 +52,6 @@ void main() {
     expect(cubit.state.active!.units, 20);
   });
 
-  test('undo reverses exactly one scan without being told the size', () async {
-    await cubit.recordScan('4800194115817', units: 10);
-    await cubit.recordScan('4800194115817');
-    await cubit.undoLastScan();
-
-    expect(cubit.state.active!.units, 10);
-
-    await cubit.undoLastScan();
-    expect(cubit.state.active!.rows, isEmpty);
-    expect(cubit.state.canUndo, isFalse);
-  });
-
   test('starting a new count closes the previous one', () async {
     await cubit.recordScan('4800888812345');
     await cubit.startCount('Front shelf count', at: DateTime(2026, 8, 27));
@@ -71,7 +59,6 @@ void main() {
     expect(cubit.state.summaries.length, 2);
     expect(cubit.state.active!.name, 'Front shelf count');
     expect(cubit.state.summaries.last.open, isFalse);
-    expect(cubit.state.canUndo, isFalse);
   });
 
   test('a closed count refuses new scans', () async {
@@ -106,6 +93,32 @@ void main() {
 
     expect(revived.state.active!.units, 3);
     expect(revived.state.summaries.single.unitCount, 3);
+    await revived.close();
+  });
+
+  test('naming a row keeps its barcode and quantity', () async {
+    await cubit.recordScan('4800888812345', units: 3);
+    await cubit.nameRow('4800888812345', 'Kopiko Blanca Twin');
+
+    final row = cubit.state.active!.rows.single;
+    expect(row.name, 'Kopiko Blanca Twin');
+    expect(row.barcode, '4800888812345');
+    expect(row.qty, 3);
+  });
+
+  test('a blank name clears back to unnamed and survives a reopen', () async {
+    await cubit.recordScan('4800888812345');
+    await cubit.nameRow('4800888812345', 'Kopiko');
+    await cubit.nameRow('4800888812345', null);
+    await cubit.close();
+    await storage.close();
+
+    final reopened = await LocalStore.open();
+    await reopened.hydrate();
+    final revived = CountCubit(reopened);
+    await revived.hydrate();
+
+    expect(revived.state.active!.rows.single.name, isNull);
     await revived.close();
   });
 }

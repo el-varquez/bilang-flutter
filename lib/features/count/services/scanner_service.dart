@@ -11,7 +11,7 @@ class ScannerService {
   final ScanThrottle _throttle;
 
   final MobileScannerController _controller = MobileScannerController(
-    autoStart: true,
+    autoStart: false,
     detectionSpeed: DetectionSpeed.normal,
     detectionTimeoutMs: 250,
     formats: const <BarcodeFormat>[
@@ -39,6 +39,8 @@ class ScannerService {
   });
 
   Future<void> start() => _controller.start();
+
+  void resetThrottle() => _throttle.reset();
 
   Future<void> stop() async {
     _throttle.reset();
