@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bilang/services/export_service.dart';
 import 'package:bilang/types/count_session.dart';
 import 'package:bilang/types/scan_row.dart';
+import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 CountSession sessionWith(List<ScanRow> rows, {String name = 'Bodega count'}) =>
@@ -141,6 +142,68 @@ void main() {
         ExportService.fileName(session, ExportFormat.csv),
         'bilang-count.csv',
       );
+    });
+  });
+
+  group('xlsx', () {
+    test('it writes one sheet with the header and the rows', () {
+      final bytes = ExportService.bytes(
+        sessionWith(const [
+          ScanRow(barcode: '4800888812345', name: 'Kopiko Blanca Twin', qty: 24),
+          ScanRow(barcode: '4800361413480', qty: 3),
+        ]),
+        ExportFormat.xlsx,
+      );
+
+      final book = Excel.decodeBytes(bytes);
+      final sheet = book.tables[book.tables.keys.first]!;
+
+      expect(sheet.rows.length, 3);
+      expect(
+        sheet.rows.first.map((cell) => cell?.value?.toString()).toList(),
+        ['name', 'barcode', 'qty'],
+      );
+
+      final first = sheet.rows[1];
+      expect(first[0]?.value?.toString(), 'Kopiko Blanca Twin');
+      expect(first[1]?.value?.toString(), '4800888812345');
+    });
+
+    test('quantities are numbers a spreadsheet can sum', () {
+      final bytes = ExportService.bytes(
+        sessionWith(const [ScanRow(barcode: '111', qty: 24)]),
+        ExportFormat.xlsx,
+      );
+
+      final book = Excel.decodeBytes(bytes);
+      final sheet = book.tables[book.tables.keys.first]!;
+
+      expect(sheet.rows[1][2]?.value, isA<IntCellValue>());
+    });
+
+    test('an unnamed row leaves the name cell empty, not the word null', () {
+      final bytes = ExportService.bytes(
+        sessionWith(const [ScanRow(barcode: '111', qty: 1)]),
+        ExportFormat.xlsx,
+      );
+
+      final book = Excel.decodeBytes(bytes);
+      final sheet = book.tables[book.tables.keys.first]!;
+      final name = sheet.rows[1][0]?.value?.toString() ?? '';
+
+      expect(name, isEmpty);
+    });
+
+    test('an empty count still produces a readable workbook', () {
+      final bytes = ExportService.bytes(
+        sessionWith(const []),
+        ExportFormat.xlsx,
+      );
+
+      final book = Excel.decodeBytes(bytes);
+      final sheet = book.tables[book.tables.keys.first]!;
+
+      expect(sheet.rows.length, 1);
     });
   });
 }

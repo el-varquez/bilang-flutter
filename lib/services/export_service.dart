@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:csv/csv.dart' show Csv;
+import 'package:excel/excel.dart';
 
 import '../format.dart';
 import '../types/count_session.dart';
@@ -51,11 +52,25 @@ class ExportService {
     return '${const JsonEncoder.withIndent('  ').convert(payload)}\n';
   }
 
+  static Uint8List _xlsx(CountSession session) {
+    final book = Excel.createExcel();
+    final sheet = book[book.getDefaultSheet()!];
+    sheet.appendRow([for (final title in _header) TextCellValue(title)]);
+    for (final row in session.rows) {
+      sheet.appendRow([
+        TextCellValue(row.name ?? ''),
+        TextCellValue(row.barcode),
+        IntCellValue(row.qty),
+      ]);
+    }
+    return Uint8List.fromList(book.encode()!);
+  }
+
   static Uint8List bytes(CountSession session, ExportFormat format) {
     return switch (format) {
       ExportFormat.csv => Uint8List.fromList(utf8.encode(csv(session))),
       ExportFormat.json => Uint8List.fromList(utf8.encode(json(session))),
-      ExportFormat.xlsx => throw UnimplementedError(),
+      ExportFormat.xlsx => _xlsx(session),
     };
   }
 }
