@@ -55,6 +55,24 @@ void main() {
     expect(find.text('Count'), findsOneWidget);
   });
 
+  testWidgets('the settings tab opens with its cubit wired', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: SplashGate(store: store, cameraEnabled: false)),
+    );
+
+    await settleThroughStorage(tester, find.text('Count'));
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Small on purpose. Scanning behavior only.'),
+      findsOneWidget,
+    );
+    expect(find.text('Vibrate on scan'), findsOneWidget);
+    expect(find.text('Delete all counts on this phone'), findsOneWidget);
+  });
+
   testWidgets('a saved count is on screen after startup', (tester) async {
     final counts = (await tester.runAsync(() async {
       await store.saveSession(
