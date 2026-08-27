@@ -11,7 +11,7 @@ class ScannerService {
   final ScanThrottle _throttle;
 
   final MobileScannerController _controller = MobileScannerController(
-    autoStart: false,
+    autoStart: true,
     detectionSpeed: DetectionSpeed.normal,
     detectionTimeoutMs: 250,
     formats: const <BarcodeFormat>[
@@ -26,6 +26,8 @@ class ScannerService {
   );
 
   ValueListenable<MobileScannerState> get state => _controller;
+
+  bool get isAttached => _controller.value.isInitialized;
 
   Stream<String> get scans => _controller.barcodes.expand((capture) {
     final values = <String>[];
