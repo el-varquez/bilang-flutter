@@ -17,32 +17,38 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              art,
-              style: const TextStyle(
-                fontFamily: Tokens.uiFont,
-                fontSize: 22,
-                letterSpacing: 6,
-                color: Tokens.ink3,
-              ),
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            art,
+            style: const TextStyle(
+              fontFamily: Tokens.uiFont,
+              fontSize: 22,
+              letterSpacing: 6,
+              color: Tokens.ink3,
             ),
-            const SizedBox(height: 12),
-            Text(title, style: AppText.sectionTitle, textAlign: TextAlign.center),
-            const SizedBox(height: 6),
-            Text(
-              message,
-              style: AppText.caption,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          Text(title, style: AppText.sectionTitle, textAlign: TextAlign.center),
+          const SizedBox(height: 6),
+          Text(message, style: AppText.caption, textAlign: TextAlign.center),
+        ],
       ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (!constraints.hasBoundedHeight) return Center(child: content);
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(child: content),
+          ),
+        );
+      },
     );
   }
 }

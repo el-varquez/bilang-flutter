@@ -73,4 +73,50 @@ void main() {
     expect(find.text('Nothing counted yet'), findsOneWidget);
     expect(find.text('Scan a barcode to start.'), findsOneWidget);
   });
+
+  testWidgets('an empty state squeezed below its content scrolls', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        const SizedBox(
+          width: 360,
+          height: 90,
+          child: EmptyState(
+            art: '| || ||| |',
+            title: 'Nothing counted yet',
+            message:
+                'Point the camera at a barcode, or type one below. '
+                'Every scan adds +1.',
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(Scrollable), findsOneWidget);
+  });
+
+  testWidgets('an empty state with room to spare stays centred', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        const SizedBox(
+          width: 360,
+          height: 600,
+          child: EmptyState(
+            art: '| || ||| |',
+            title: 'Nothing counted yet',
+            message: 'Scan a barcode to start.',
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    final box = tester.getRect(find.byType(SizedBox).first);
+    final title = tester.getRect(find.text('Nothing counted yet'));
+    expect((title.center.dy - box.center.dy).abs(), lessThan(40));
+  });
 }
