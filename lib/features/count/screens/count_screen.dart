@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../components/app_button.dart';
 import '../../../components/app_toast.dart';
 import '../../../components/empty_state.dart';
+import '../../../components/new_count_dialog.dart';
+import '../../../components/swipe_delete_panel.dart';
 import '../../../services/feedback_service.dart';
 import '../../../services/local_store.dart';
 import '../../../store/count_cubit.dart';
@@ -18,6 +21,7 @@ import '../components/row_dialogs.dart';
 import '../components/viewfinder.dart';
 import '../services/scan_armer.dart';
 import '../services/scanner_service.dart';
+import '../services/wedge_buffer.dart';
 
 class CountScreen extends StatefulWidget {
   const CountScreen({
@@ -41,6 +45,7 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
   StreamSubscription<String>? _subscription;
   late final ScanArmer _armer = ScanArmer(onArm: _freshThrottle);
   late final FeedbackService _feedback = FeedbackService(widget.storage);
+  final WedgeBuffer _wedgeKeys = WedgeBuffer();
   String? _cameraError;
   String? _flashBarcode;
   Timer? _flashTimer;
@@ -48,12 +53,12 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    HardwareKeyboard.instance.addHandler(_onHardwareKey);
     if (!widget.cameraEnabled) return;
     WidgetsBinding.instance.addObserver(this);
     final scanner = ScannerService();
     _scanner = scanner;
     _subscription = scanner.scans.listen(_onDecoded);
-    unawaited(scanner.start());
   }
 
   Future<void> _freshThrottle() async => _scanner?.resetThrottle();
@@ -65,7 +70,7 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
     switch (state) {
       case AppLifecycleState.resumed:
         _subscription ??= scanner.scans.listen(_onDecoded);
-        unawaited(scanner.start());
+        if (scanner.isAttached) unawaited(scanner.start());
       case AppLifecycleState.inactive:
         unawaited(_subscription?.cancel());
         _subscription = null;
@@ -80,6 +85,7 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onHardwareKey);
     WidgetsBinding.instance.removeObserver(this);
     _flashTimer?.cancel();
     unawaited(_subscription?.cancel());
@@ -98,6 +104,33 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
   Future<void> _onDecoded(String barcode) async {
     if (!await _armer.accept()) return;
     await _record(barcode);
+  }
+
+  bool get _wedgeIsListening {
+    if (!mounted) return false;
+    if (!(ModalRoute.of(context)?.isCurrent ?? false)) return false;
+    if (context.read<CountCubit>().state.active?.open != true) return false;
+    final focused = FocusManager.instance.primaryFocus?.context;
+    return focused?.findAncestorStateOfType<EditableTextState>() == null;
+  }
+
+  bool _onHardwareKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+    if (!_wedgeIsListening) {
+      _wedgeKeys.clear();
+      return false;
+    }
+    final now = DateTime.now();
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      final barcode = _wedgeKeys.submit(now);
+      if (barcode == null) return false;
+      unawaited(_record(barcode));
+      return true;
+    }
+    final character = event.character;
+    if (character == null) return false;
+    return _wedgeKeys.accept(character, now);
   }
 
   Future<void> _record(String barcode) async {
@@ -120,10 +153,10 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _startCount() async {
-    await context.read<CountCubit>().startCount(
-      'Stock count',
-      at: DateTime.now(),
-    );
+    final cubit = context.read<CountCubit>();
+    final name = await askCountName(context);
+    if (name == null) return;
+    await cubit.startCount(name, at: DateTime.now());
   }
 
   Future<void> _editQuantity(ScanRow row) async {
@@ -176,6 +209,7 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
           );
         }
 
+        final open = session.open;
         return ValueListenableBuilder<ScanArmState>(
           valueListenable: _armer,
           builder: (context, armState, child) {
@@ -190,16 +224,18 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
                     child: Viewfinder(state: armState, preview: _preview()),
                   ),
                 ),
-                _wedge(),
+                _wedge(open),
                 _counters(session.rows.length, session.units),
-                Expanded(child: _rows(session.rows)),
+                Expanded(child: _rows(session.rows, open)),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
                   child: AppButton(
                     label: 'SCAN',
                     expanded: true,
                     background: armed ? Tokens.greenDeep : null,
-                    onPressed: widget.cameraEnabled ? _armer.arm : null,
+                    onPressed: widget.cameraEnabled && open
+                        ? _armer.arm
+                        : null,
                   ),
                 ),
               ],
@@ -210,7 +246,7 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _wedge() {
+  Widget _wedge(bool open) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
       child: Row(
@@ -220,21 +256,25 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
             child: TextField(
               controller: _entry,
               focusNode: _entryFocus,
-              autofocus: true,
+              enabled: open,
               autocorrect: false,
               enableSuggestions: false,
               textInputAction: TextInputAction.done,
               onSubmitted: _submitTyped,
               style: AppText.mono,
-              decoration: const InputDecoration(
-                hintText: 'Type a barcode — hardware scanners land here',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: open
+                    ? 'Type a barcode that won\'t scan'
+                    : 'This count is done',
+                border: const OutlineInputBorder(),
               ),
             ),
           ),
           AppButton(
             label: 'ADD',
-            onPressed: () => unawaited(_submitTyped(_entry.text)),
+            onPressed: open
+                ? () => unawaited(_submitTyped(_entry.text))
+                : null,
           ),
         ],
       ),
@@ -277,7 +317,7 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _rows(List<ScanRow> rows) {
+  Widget _rows(List<ScanRow> rows, bool open) {
     if (rows.isEmpty) {
       return const EmptyState(
         art: '| || ||| |',
@@ -295,47 +335,34 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
         final cubit = context.read<CountCubit>();
         return Dismissible(
           key: ValueKey(row.barcode),
-          background: _swipeAway(Alignment.centerLeft),
-          secondaryBackground: _swipeAway(Alignment.centerRight),
+          background: const SwipeDeletePanel(alignment: Alignment.centerLeft),
+          secondaryBackground: const SwipeDeletePanel(
+            alignment: Alignment.centerRight,
+          ),
           confirmDismiss: (_) async {
+            if (!open) return false;
             await _remove(row);
             return false;
           },
           child: CountRow(
             row: row,
             flashing: row.barcode == _flashBarcode,
-            onDecrement: () => unawaited(
-              cubit.setQuantity(row.barcode, row.qty > 1 ? row.qty - 1 : 1),
-            ),
-            onIncrement: () =>
-                unawaited(cubit.setQuantity(row.barcode, row.qty + 1)),
-            onEditQuantity: () => unawaited(_editQuantity(row)),
-            onEditName: () => unawaited(_editName(row)),
+            onDecrement: open
+                ? () => unawaited(
+                    cubit.setQuantity(
+                      row.barcode,
+                      row.qty > 1 ? row.qty - 1 : 1,
+                    ),
+                  )
+                : () {},
+            onIncrement: open
+                ? () => unawaited(cubit.setQuantity(row.barcode, row.qty + 1))
+                : () {},
+            onEditQuantity: open ? () => unawaited(_editQuantity(row)) : () {},
+            onEditName: open ? () => unawaited(_editName(row)) : () {},
           ),
         );
       },
-    );
-  }
-
-  Widget _swipeAway(Alignment alignment) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: Tokens.red,
-          borderRadius: BorderRadius.circular(Tokens.radiusControl),
-        ),
-        child: Align(
-          alignment: alignment,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              'Delete',
-              style: AppText.bodyStrong.copyWith(color: Tokens.paper),
-            ),
-          ),
-        ),
-      ),
     );
   }
 

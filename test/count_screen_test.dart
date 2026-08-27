@@ -7,6 +7,7 @@ import 'package:bilang/services/local_store.dart';
 import 'package:bilang/store/count_cubit.dart';
 import 'package:bilang/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive_ce.dart';
@@ -269,5 +270,139 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(cubit.state.active!.rows.single.barcode, '4800888812345');
+  });
+
+  testWidgets('starting a count here asks for a name too', (tester) async {
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    await tapLive(tester, find.text('START A COUNT'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Start a new count'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'Bodega count');
+    await tapLive(tester, find.text('START'));
+    await settleThroughStorage(tester, () => cubit.state.active != null);
+
+    expect(cubit.state.active!.name, 'Bodega count');
+  });
+
+  testWidgets('cancelling the name starts no count', (tester) async {
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    await tapLive(tester, find.text('START A COUNT'));
+    await tester.pumpAndSettle();
+    await tapLive(tester, find.text('CANCEL'));
+    await tester.pumpAndSettle();
+
+    expect(cubit.state.active, isNull);
+    expect(find.text('No count open'), findsOneWidget);
+  });
+
+  testWidgets('the field does not grab focus on arrival', (tester) async {
+    await tester.runAsync(
+      () => cubit.startCount('Bodega count', at: DateTime(2026, 8, 27)),
+    );
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.autofocus, isFalse);
+    expect(field.focusNode!.hasFocus, isFalse);
+  });
+
+  testWidgets('a wedge burst rings without touching the field', (tester) async {
+    await tester.runAsync(
+      () => cubit.startCount('Bodega count', at: DateTime(2026, 8, 27)),
+    );
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    await tester.runAsync(() async {
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit4, character: '4');
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit8, character: '8');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    });
+    await settleThroughStorage(
+      tester,
+      () => cubit.state.active!.rows.isNotEmpty,
+    );
+
+    expect(cubit.state.active!.rows.single.barcode, '48');
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, isEmpty);
+  });
+
+  testWidgets('a wedge burst is ignored while the field has focus', (
+    tester,
+  ) async {
+    await tester.runAsync(
+      () => cubit.startCount('Bodega count', at: DateTime(2026, 8, 27)),
+    );
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+
+    await tester.runAsync(() async {
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit4, character: '4');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    });
+    await tester.pumpAndSettle();
+
+    expect(cubit.state.active!.rows, isEmpty);
+  });
+
+  testWidgets('a wedge burst is ignored when the count is closed', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      await cubit.startCount('Older count', at: DateTime(2026, 8, 26));
+      await cubit.startCount('Newer count', at: DateTime(2026, 8, 27));
+      await cubit.openCount(cubit.state.summaries.last.id);
+    });
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    await tester.runAsync(() async {
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit4, character: '4');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    });
+    await tester.pumpAndSettle();
+
+    expect(cubit.state.active!.rows, isEmpty);
+  });
+
+  testWidgets('a closed count cannot be scanned into', (tester) async {
+    await tester.runAsync(() async {
+      await cubit.startCount('Older count', at: DateTime(2026, 8, 26));
+      await cubit.startCount('Newer count', at: DateTime(2026, 8, 27));
+      await cubit.openCount(cubit.state.summaries.last.id);
+    });
+
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    expect(find.text('This count is done'), findsOneWidget);
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.enabled, isFalse);
+  });
+
+  testWidgets('an open count can be scanned into', (tester) async {
+    await tester.runAsync(
+      () => cubit.startCount('Bodega count', at: DateTime(2026, 8, 27)),
+    );
+
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    expect(find.text('This count is done'), findsNothing);
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.enabled, isTrue);
   });
 }
