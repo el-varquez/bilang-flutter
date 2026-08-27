@@ -106,6 +106,48 @@ void main() {
     expect(row.qty, 3);
   });
 
+  test('deleting a count removes it from both boxes', () async {
+    await cubit.startCount('Second count', at: DateTime(2026, 8, 27));
+    final older = cubit.state.summaries.last;
+
+    await cubit.deleteCount(older.id);
+
+    expect(cubit.state.summaries.single.name, 'Second count');
+    expect(await storage.loadSession(older.id), isNull);
+  });
+
+  test('deleting the active count leaves nothing open', () async {
+    await cubit.deleteCount(cubit.state.active!.id);
+
+    expect(cubit.state.active, isNull);
+    expect(cubit.state.summaries, isEmpty);
+    expect(storage.activeCountId, isNull);
+  });
+
+  test('deleting another count leaves the active one alone', () async {
+    await cubit.startCount('Second count', at: DateTime(2026, 8, 27));
+
+    await cubit.deleteCount(cubit.state.summaries.last.id);
+
+    expect(cubit.state.active!.name, 'Second count');
+    expect(storage.activeCountId, cubit.state.active!.id);
+  });
+
+  test('a deleted count stays gone after a reopen', () async {
+    await cubit.startCount('Second count', at: DateTime(2026, 8, 27));
+    await cubit.deleteCount(cubit.state.summaries.last.id);
+    await cubit.close();
+    await storage.close();
+
+    final reopened = await LocalStore.open();
+    await reopened.hydrate();
+    final revived = CountCubit(reopened);
+    await revived.hydrate();
+
+    expect(revived.state.summaries.single.name, 'Second count');
+    await revived.close();
+  });
+
   test('a blank name clears back to unnamed and survives a reopen', () async {
     await cubit.recordScan('4800888812345');
     await cubit.nameRow('4800888812345', 'Kopiko');
