@@ -57,7 +57,7 @@ class AppDialog extends StatelessWidget {
 
 Future<T?> showAppDialog<T>({
   required BuildContext context,
-  required AppDialog dialog,
+  required Widget dialog,
 }) {
   return showDialog<T>(
     context: context,

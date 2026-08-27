@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:bilang/components/app_button.dart';
+import 'package:bilang/features/count/components/count_row.dart';
 import 'package:bilang/features/count/screens/count_screen.dart';
 import 'package:bilang/services/local_store.dart';
 import 'package:bilang/store/count_cubit.dart';
@@ -51,6 +53,11 @@ void main() {
       child: Scaffold(body: CountScreen(storage: storage, cameraEnabled: false)),
     ),
   );
+
+  Future<void> tapLive(WidgetTester tester, Finder target) async {
+    await tester.runAsync(() => tester.tap(target));
+    await tester.pump();
+  }
 
   Future<void> submit(WidgetTester tester, String barcode) async {
     await tester.enterText(find.byType(TextField), barcode);
@@ -120,5 +127,147 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(cubit.state.active!.rows, isEmpty);
+  });
+
+  testWidgets('the viewfinder starts idle and invites a press', (tester) async {
+    await tester.runAsync(
+      () => cubit.startCount('Bodega count', at: DateTime(2026, 8, 27)),
+    );
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    expect(find.text('PRESS SCAN TO READ'), findsOneWidget);
+    expect(find.text('SCANNING…'), findsNothing);
+    expect(find.widgetWithText(AppButton, 'SCAN'), findsOneWidget);
+  });
+
+  testWidgets('the stepper adjusts a row', (tester) async {
+    await tester.runAsync(() async {
+      await cubit.startCount('Bodega count', at: DateTime(2026, 8, 27));
+      await cubit.recordScan('4800888812345', units: 2);
+    });
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    await tapLive(tester, find.text('+'));
+    await settleThroughStorage(
+      tester,
+      () => cubit.state.active!.rows.single.qty == 3,
+    );
+    expect(cubit.state.active!.rows.single.qty, 3);
+
+    await tapLive(tester, find.text('−'));
+    await settleThroughStorage(
+      tester,
+      () => cubit.state.active!.rows.single.qty == 2,
+    );
+    expect(cubit.state.active!.rows.single.qty, 2);
+  });
+
+  testWidgets('stepping down at one keeps the row', (tester) async {
+    await tester.runAsync(() async {
+      await cubit.startCount('Bodega count', at: DateTime(2026, 8, 27));
+      await cubit.recordScan('4800888812345');
+    });
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    await tapLive(tester, find.text('−'));
+    await settleThroughStorage(tester, () => cubit.state.active != null);
+
+    expect(cubit.state.active!.rows.single.qty, 1);
+  });
+
+  testWidgets('tapping the quantity types an exact number', (tester) async {
+    await tester.runAsync(() async {
+      await cubit.startCount('Bodega count', at: DateTime(2026, 8, 27));
+      await cubit.recordScan('4800888812345');
+    });
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    await tapLive(
+      tester,
+      find.descendant(of: find.byType(CountRow), matching: find.text('1')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '24');
+    await tapLive(tester, find.text('SET'));
+    await settleThroughStorage(
+      tester,
+      () => cubit.state.active!.rows.single.qty == 24,
+    );
+
+    expect(cubit.state.active!.rows.single.qty, 24);
+  });
+
+  testWidgets('typing zero removes the row', (tester) async {
+    await tester.runAsync(() async {
+      await cubit.startCount('Bodega count', at: DateTime(2026, 8, 27));
+      await cubit.recordScan('4800888812345');
+    });
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    await tapLive(
+      tester,
+      find.descendant(of: find.byType(CountRow), matching: find.text('1')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '0');
+    await tapLive(tester, find.text('SET'));
+    await settleThroughStorage(tester, () => cubit.state.active!.rows.isEmpty);
+
+    expect(cubit.state.active!.rows, isEmpty);
+  });
+
+  testWidgets('an unnamed row invites a name and takes one', (tester) async {
+    await tester.runAsync(() async {
+      await cubit.startCount('Bodega count', at: DateTime(2026, 8, 27));
+      await cubit.recordScan('4800888812345');
+    });
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    expect(find.text('tap to name'), findsOneWidget);
+
+    await tapLive(tester, find.text('tap to name'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Kopiko Blanca Twin');
+    await tapLive(tester, find.text('SAVE'));
+    await settleThroughStorage(
+      tester,
+      () => cubit.state.active!.rows.single.name != null,
+    );
+
+    expect(cubit.state.active!.rows.single.name, 'Kopiko Blanca Twin');
+  });
+
+  testWidgets('a row swipes onto a delete panel', (tester) async {
+    await tester.runAsync(() async {
+      await cubit.startCount('Bodega count', at: DateTime(2026, 8, 27));
+      await cubit.recordScan('4800888812345');
+    });
+    await tester.pumpWidget(host());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dismissible), findsOneWidget);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(CountRow)),
+    );
+    await gesture.moveBy(const Offset(-30, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-40, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-40, 0));
+    await tester.pump();
+
+    expect(find.text('Delete'), findsOneWidget);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(cubit.state.active!.rows.single.barcode, '4800888812345');
   });
 }

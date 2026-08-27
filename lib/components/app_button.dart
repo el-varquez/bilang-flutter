@@ -11,18 +11,22 @@ class AppButton extends StatelessWidget {
     this.onPressed,
     this.variant = AppButtonVariant.primary,
     this.expanded = false,
+    this.background,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final AppButtonVariant variant;
   final bool expanded;
+  final Color? background;
 
-  Color get _background => switch (variant) {
-    AppButtonVariant.primary => Tokens.green,
-    AppButtonVariant.destructive => Tokens.red,
-    AppButtonVariant.secondary => Colors.transparent,
-  };
+  Color get _background =>
+      background ??
+      switch (variant) {
+        AppButtonVariant.primary => Tokens.green,
+        AppButtonVariant.destructive => Tokens.red,
+        AppButtonVariant.secondary => Colors.transparent,
+      };
 
   Color get _foreground => switch (variant) {
     AppButtonVariant.secondary => Tokens.ink2,

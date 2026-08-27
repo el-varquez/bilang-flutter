@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bilang/features/count/components/count_row.dart';
 import 'package:bilang/services/local_store.dart';
 import 'package:bilang/shell/app_shell.dart';
 import 'package:bilang/shell/splash_gate.dart';
@@ -79,8 +80,13 @@ void main() {
       ),
     );
 
-    expect(find.textContaining('1 items'), findsOneWidget);
-    expect(find.textContaining('24 units'), findsOneWidget);
+    expect(find.text('ITEMS'), findsOneWidget);
+    expect(find.text('UNITS COUNTED'), findsOneWidget);
+    expect(find.text('4800888812345'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(CountRow), matching: find.text('24')),
+      findsOneWidget,
+    );
 
     await counts.close();
   });
