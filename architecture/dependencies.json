@@ -7,13 +7,14 @@
       "hive_ce_flutter",
       "flutter_bloc",
       "equatable",
-      "mobile_scanner"
+      "mobile_scanner",
+      "csv",
+      "excel"
     ],
     "dev_dependencies": [
       "flutter_test",
       "flutter_lints",
-      "flutter_launcher_icons",
-      "flutter_native_splash"
+      "flutter_launcher_icons"
     ]
   }
 }
