@@ -52,7 +52,7 @@ class _AppShellState extends State<AppShell> {
           NavigationDestination(
             icon: Icon(Icons.list_alt_outlined),
             selectedIcon: Icon(Icons.list_alt, color: Tokens.greenDeep),
-            label: 'Counts',
+            label: 'Saved Counts',
           ),
           NavigationDestination(
             icon: Icon(Icons.ios_share_outlined),
