@@ -48,26 +48,7 @@ class CountCubit extends Cubit<CountState> {
     } else {
       rows.add(ScanRow(barcode: barcode, name: name, qty: units));
     }
-    await _apply(
-      session.copyWith(rows: rows),
-      history: [...state.history, ScanEvent(barcode: barcode, units: units)],
-    );
-  }
-
-  Future<void> undoLastScan() async {
-    final session = state.active;
-    if (session == null || state.history.isEmpty) return;
-    final history = [...state.history];
-    final event = history.removeLast();
-    final rows = [...session.rows];
-    final index = rows.indexWhere((row) => row.barcode == event.barcode);
-    if (index < 0) return;
-    if (rows[index].qty <= event.units) {
-      rows.removeAt(index);
-    } else {
-      rows[index] = rows[index].copyWith(qty: rows[index].qty - event.units);
-    }
-    await _apply(session.copyWith(rows: rows), history: history);
+    await _apply(session.copyWith(rows: rows));
   }
 
   Future<void> setQuantity(String barcode, int qty) async {
@@ -81,20 +62,27 @@ class CountCubit extends Cubit<CountState> {
     } else {
       rows[index] = rows[index].copyWith(qty: qty);
     }
-    await _apply(session.copyWith(rows: rows), history: state.history);
+    await _apply(session.copyWith(rows: rows));
   }
 
-  Future<void> _apply(
-    CountSession session, {
-    required List<ScanEvent> history,
-  }) async {
-    await _storage.saveSession(session);
-    emit(
-      state.copyWith(
-        summaries: _storage.summaries(),
-        active: session,
-        history: history,
-      ),
+  Future<void> nameRow(String barcode, String? name) async {
+    final session = state.active;
+    if (session == null) return;
+    final rows = [...session.rows];
+    final index = rows.indexWhere((row) => row.barcode == barcode);
+    if (index < 0) return;
+    final trimmed = name?.trim();
+    final row = rows[index];
+    rows[index] = ScanRow(
+      barcode: row.barcode,
+      name: (trimmed == null || trimmed.isEmpty) ? null : trimmed,
+      qty: row.qty,
     );
+    await _apply(session.copyWith(rows: rows));
+  }
+
+  Future<void> _apply(CountSession session) async {
+    await _storage.saveSession(session);
+    emit(state.copyWith(summaries: _storage.summaries(), active: session));
   }
 }
