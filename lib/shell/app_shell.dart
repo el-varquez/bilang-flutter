@@ -4,10 +4,18 @@ import '../features/count/screens/count_screen.dart';
 import '../features/counts/screens/counts_screen.dart';
 import '../features/export/screens/export_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
+import '../services/local_store.dart';
 import '../theme/tokens.dart';
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({
+    super.key,
+    required this.storage,
+    this.cameraEnabled = true,
+  });
+
+  final LocalStore storage;
+  final bool cameraEnabled;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -19,7 +27,10 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final screens = <Widget>[
-      const CountScreen(),
+      CountScreen(
+        storage: widget.storage,
+        cameraEnabled: widget.cameraEnabled,
+      ),
       const CountsScreen(),
       const ExportScreen(),
       const SettingsScreen(),

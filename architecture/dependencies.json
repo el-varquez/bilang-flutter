@@ -6,7 +6,8 @@
       "hive_ce",
       "hive_ce_flutter",
       "flutter_bloc",
-      "equatable"
+      "equatable",
+      "mobile_scanner"
     ],
     "dev_dependencies": [
       "flutter_test",
