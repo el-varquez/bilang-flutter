@@ -38,6 +38,16 @@ class CountCubit extends Cubit<CountState> {
     emit(CountState(summaries: _storage.summaries(), active: session));
   }
 
+  Future<void> deleteCount(String id) async {
+    await _storage.deleteSession(id);
+    if (state.active?.id != id) {
+      emit(state.copyWith(summaries: _storage.summaries()));
+      return;
+    }
+    await _storage.setActiveCountId(null);
+    emit(CountState(summaries: _storage.summaries()));
+  }
+
   Future<void> recordScan(String barcode, {String? name, int units = 1}) async {
     final session = state.active;
     if (session == null || !session.open) return;

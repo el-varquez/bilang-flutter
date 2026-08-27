@@ -41,7 +41,7 @@ void main() {
     await tester.pumpWidget(shell(counts));
 
     expect(find.text('Count'), findsOneWidget);
-    expect(find.text('Counts'), findsOneWidget);
+    expect(find.text('Saved Counts'), findsOneWidget);
     expect(find.text('Export'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('No count open'), findsOneWidget);
