@@ -206,4 +206,15 @@ void main() {
       expect(sheet.rows.length, 1);
     });
   });
+
+  group('mime types', () {
+    test('each format carries the type a share sheet expects', () {
+      expect(ExportService.mimeType(ExportFormat.csv), 'text/csv');
+      expect(ExportService.mimeType(ExportFormat.json), 'application/json');
+      expect(
+        ExportService.mimeType(ExportFormat.xlsx),
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+    });
+  });
 }

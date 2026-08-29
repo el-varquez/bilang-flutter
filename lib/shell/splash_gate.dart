@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../services/file_delivery.dart';
 import '../services/local_store.dart';
 import '../store/count_cubit.dart';
 import '../store/settings_cubit.dart';
@@ -71,6 +72,7 @@ class _SplashGateState extends State<SplashGate> {
       ],
       child: AppShell(
         storage: widget.store,
+        delivery: const PlatformFileDelivery(),
         cameraEnabled: widget.cameraEnabled,
       ),
     );

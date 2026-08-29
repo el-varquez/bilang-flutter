@@ -9,7 +9,10 @@
       "equatable",
       "mobile_scanner",
       "csv",
-      "excel"
+      "excel",
+      "share_plus",
+      "path_provider",
+      "file_picker"
     ],
     "dev_dependencies": [
       "flutter_test",
