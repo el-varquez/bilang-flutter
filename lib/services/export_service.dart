@@ -22,6 +22,13 @@ class ExportService {
     ExportFormat.json => 'json',
   };
 
+  static String mimeType(ExportFormat format) => switch (format) {
+    ExportFormat.csv => 'text/csv',
+    ExportFormat.xlsx =>
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ExportFormat.json => 'application/json',
+  };
+
   static String fileName(CountSession session, ExportFormat format) {
     final slug = session.name
         .toLowerCase()
