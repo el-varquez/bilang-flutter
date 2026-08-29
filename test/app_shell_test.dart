@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:bilang/services/file_delivery.dart';
 import 'package:bilang/services/local_store.dart';
 import 'package:bilang/shell/app_shell.dart';
 import 'package:bilang/store/count_cubit.dart';
@@ -7,6 +9,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive_ce.dart';
+
+class StubDelivery implements FileDelivery {
+  @override
+  Future<ShareOutcome> share({
+    required String fileName,
+    required Uint8List bytes,
+    required String mimeType,
+  }) async => ShareOutcome.shared;
+
+  @override
+  Future<bool> save({
+    required String fileName,
+    required Uint8List bytes,
+    required String mimeType,
+  }) async => true;
+}
 
 void main() {
   late Directory dir;
@@ -16,7 +34,11 @@ void main() {
   Widget shell(CountCubit cubit) => MaterialApp(
     home: BlocProvider<CountCubit>.value(
       value: cubit,
-      child: AppShell(storage: storage, cameraEnabled: false),
+      child: AppShell(
+        storage: storage,
+        delivery: StubDelivery(),
+        cameraEnabled: false,
+      ),
     ),
   );
 

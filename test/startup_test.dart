@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:bilang/features/count/components/count_row.dart';
+import 'package:bilang/services/file_delivery.dart';
 import 'package:bilang/services/local_store.dart';
 import 'package:bilang/shell/app_shell.dart';
 import 'package:bilang/shell/splash_gate.dart';
@@ -11,6 +13,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive_ce.dart';
+
+class StubDelivery implements FileDelivery {
+  @override
+  Future<ShareOutcome> share({
+    required String fileName,
+    required Uint8List bytes,
+    required String mimeType,
+  }) async => ShareOutcome.shared;
+
+  @override
+  Future<bool> save({
+    required String fileName,
+    required Uint8List bytes,
+    required String mimeType,
+  }) async => true;
+}
 
 Future<void> settleThroughStorage(WidgetTester tester, Finder target) async {
   for (var turn = 0; turn < 60; turn++) {
@@ -93,7 +111,11 @@ void main() {
       MaterialApp(
         home: BlocProvider<CountCubit>.value(
           value: counts,
-          child: AppShell(storage: store, cameraEnabled: false),
+          child: AppShell(
+            storage: store,
+            delivery: StubDelivery(),
+            cameraEnabled: false,
+          ),
         ),
       ),
     );
