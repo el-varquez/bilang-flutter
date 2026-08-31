@@ -48,17 +48,25 @@ class CountCubit extends Cubit<CountState> {
     emit(CountState(summaries: _storage.summaries()));
   }
 
-  Future<void> recordScan(String barcode, {String? name, int units = 1}) async {
+  Future<ScanRow?> recordScan(
+    String barcode, {
+    String? name,
+    int units = 1,
+  }) async {
     final session = state.active;
-    if (session == null || !session.open) return;
+    if (session == null || !session.open) return null;
     final rows = [...session.rows];
     final index = rows.indexWhere((row) => row.barcode == barcode);
+    final ScanRow updated;
     if (index >= 0) {
-      rows[index] = rows[index].copyWith(qty: rows[index].qty + units);
+      updated = rows[index].copyWith(qty: rows[index].qty + units);
+      rows[index] = updated;
     } else {
-      rows.add(ScanRow(barcode: barcode, name: name, qty: units));
+      updated = ScanRow(barcode: barcode, name: name, qty: units);
+      rows.add(updated);
     }
     await _apply(session.copyWith(rows: rows));
+    return updated;
   }
 
   Future<void> setQuantity(String barcode, int qty) async {
