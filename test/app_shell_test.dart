@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:bilang/services/file_delivery.dart';
+import 'package:bilang/services/live_client.dart';
 import 'package:bilang/services/local_store.dart';
 import 'package:bilang/shell/app_shell.dart';
 import 'package:bilang/store/count_cubit.dart';
@@ -30,6 +31,7 @@ void main() {
   late Directory dir;
   late LocalStore storage;
   late CountCubit counts;
+  late LiveClient live;
 
   Widget shell(CountCubit cubit) => MaterialApp(
     home: BlocProvider<CountCubit>.value(
@@ -37,6 +39,7 @@ void main() {
       child: AppShell(
         storage: storage,
         delivery: StubDelivery(),
+        live: live,
         cameraEnabled: false,
       ),
     ),
@@ -49,9 +52,11 @@ void main() {
     await storage.hydrate();
     counts = CountCubit(storage);
     await counts.hydrate();
+    live = LiveClient(storage);
   });
 
   tearDown(() async {
+    live.dispose();
     await counts.close();
     await Hive.close();
     await dir.delete(recursive: true);

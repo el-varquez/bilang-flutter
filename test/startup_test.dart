@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:bilang/features/count/components/count_row.dart';
 import 'package:bilang/services/file_delivery.dart';
+import 'package:bilang/services/live_client.dart';
 import 'package:bilang/services/local_store.dart';
 import 'package:bilang/shell/app_shell.dart';
 import 'package:bilang/shell/splash_gate.dart';
@@ -107,6 +108,9 @@ void main() {
       return hydrated;
     }))!;
 
+    final live = LiveClient(store);
+    addTearDown(live.dispose);
+
     await tester.pumpWidget(
       MaterialApp(
         home: BlocProvider<CountCubit>.value(
@@ -114,6 +118,7 @@ void main() {
           child: AppShell(
             storage: store,
             delivery: StubDelivery(),
+            live: live,
             cameraEnabled: false,
           ),
         ),
