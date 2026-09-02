@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bilang — Inventory Scanner</title>
+<meta name="description" content="Scan a barcode, the quantity ticks up. A stock-counting app for any store — fully offline, no account, no cloud, no ads.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231e7a4c'/%3E%3Cpath stroke='%23fff' stroke-width='2.6' d='M8 9v14M13 9v14M19 9v14M24 9v14'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Hanken+Grotesk:wght@400..700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #17241d;
+    --green: #1e7a4c;
+    --green-deep: #16603a;
+    --grey: #5c6b62;
+    --line: #d8e2db;
+    --tile: #eef4f0;
+  }
+  * { margin: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Hanken Grotesk', system-ui, sans-serif; color: var(--ink); background: #fff;
+    line-height: 1.55;
+  }
+  .serif { font-family: 'Fraunces', Georgia, serif; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 0 24px; }
+
+  header { padding: 26px 0 0; display: flex; align-items: center; gap: 14px; }
+  .glyph { display: flex; align-items: center; gap: 4px; height: 20px; }
+  .glyph span { display: block; height: 100%; background: var(--green); border-radius: 1px; }
+  .b1 { width: 3px; } .b2 { width: 7px; } .b3 { width: 3px; } .b4 { width: 11px; }
+  .b5 { width: 3px; } .b6 { width: 7px; } .b7 { width: 3px; }
+  .wordmark { font-size: 27px; font-weight: 650; }
+  .wordmark .dot { color: var(--green); }
+
+  .hero { display: flex; gap: 56px; align-items: center; padding: 12px 0 48px; min-height: calc(100vh - 140px); }
+  .hero .copy { flex: 1.1; }
+  .eyebrow {
+    font-size: 15px; font-weight: 650; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--green); margin-bottom: 18px;
+  }
+  h1 { font-size: clamp(40px, 6vw, 62px); font-weight: 640; line-height: 1.06; letter-spacing: -0.015em; margin-bottom: 22px; }
+  .sub { font-size: 20px; color: var(--grey); max-width: 30em; margin-bottom: 30px; }
+  .cta-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .chip {
+    background: var(--green); color: #fff; border-radius: 999px; padding: 13px 26px;
+    font-weight: 700; font-size: 16px;
+  }
+  .cta-row a { color: var(--green-deep); font-weight: 650; font-size: 16px; }
+  .hero .shot { flex: .9; display: flex; justify-content: center; }
+  .phone {
+    height: min(660px, calc(100vh - 250px)); aspect-ratio: 720 / 1485;
+    border-radius: 26px; border: 2px solid var(--line);
+    box-shadow: 0 28px 60px rgba(23,36,29,.16); overflow: hidden; background: #fff;
+  }
+  .phone img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding-bottom: 72px; }
+  .feat { background: var(--tile); border: 1.5px solid var(--line); border-radius: 16px; padding: 26px 26px 28px; }
+  .feat h3 { font-size: 23px; font-weight: 650; margin-bottom: 10px; }
+  .feat p { font-size: 16.5px; color: var(--grey); }
+  .feat p b { color: var(--ink); font-weight: 650; }
+
+  .privacy { border-top: 1.5px solid var(--line); border-bottom: 1.5px solid var(--line); padding: 46px 0; text-align: center; }
+  .privacy h2 { font-size: 32px; font-weight: 650; margin-bottom: 12px; }
+  .privacy p { color: var(--grey); font-size: 18px; max-width: 38em; margin: 0 auto 16px; }
+  .privacy a { color: var(--green-deep); font-weight: 650; }
+
+  footer { padding: 34px 0 44px; display: flex; gap: 20px; flex-wrap: wrap; align-items: center; justify-content: space-between; color: var(--grey); font-size: 15px; }
+  footer a { color: var(--green-deep); font-weight: 600; text-decoration: none; }
+
+  @media (max-width: 760px) {
+    .hero { flex-direction: column; gap: 44px; padding: 40px 0 56px; min-height: 0; text-align: center; }
+    .phone { height: auto; aspect-ratio: auto; width: min(310px, 78vw); }
+    .phone img { height: auto; }
+    .sub { margin-left: auto; margin-right: auto; }
+    .cta-row { justify-content: center; }
+    .features { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="glyph"><span class="b1"></span><span class="b2"></span><span class="b3"></span><span class="b4"></span><span class="b5"></span><span class="b6"></span><span class="b7"></span></div>
+    <div class="wordmark serif">Bilang<span class="dot">.</span></div>
+  </header>
+
+  <section class="hero">
+    <div class="copy">
+      <div class="eyebrow">Inventory Scanner</div>
+      <h1 class="serif">Scan a barcode. It counts.</h1>
+      <p class="sub">A stock-counting app for any store — your phone works like a hardware inventory
+        terminal. Fully offline: no account, no cloud, no ads.</p>
+      <div class="cta-row">
+        <span class="chip">Coming soon to Google Play</span>
+        <a href="privacy-policy.html">Privacy policy</a>
+      </div>
+    </div>
+    <div class="shot">
+      <div class="phone"><img src="screen-count.png" alt="The Bilang count screen: a viewfinder, item counters, and scanned product rows" width="720" height="1485"></div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feat">
+      <h3 class="serif">Three ways to scan</h3>
+      <p>The <b>camera</b> reads one barcode per press. A <b>Bluetooth or USB scanner</b> is always
+        live — no field to tap. And a barcode that won't scan can simply be <b>typed</b>.</p>
+    </div>
+    <div class="feat">
+      <h3 class="serif">Fix it on the row</h3>
+      <p>Steppers nudge a quantity, <b>tapping it types an exact number</b>, a swipe deletes the row.
+        Counting shrink-wrapped packs? <b>Batch scan</b> makes one scan add 24.</p>
+    </div>
+    <div class="feat">
+      <h3 class="serif">Export anywhere</h3>
+      <p>Every count exports as <b>CSV, Excel, or JSON</b> — three columns, <b>name · barcode ·
+        qty</b> — a file any POS or spreadsheet can read. Share it to any app on your phone.</p>
+    </div>
+  </section>
+
+  <section class="privacy">
+    <h2 class="serif">Private by design</h2>
+    <p>Your counts live on your phone and nowhere else. Bilang collects nothing, sends nothing, and
+      makes no network connections — the only thing that ever leaves the device is the export file
+      you choose to share.</p>
+    <a href="privacy-policy.html">Read the privacy policy</a>
+  </section>
+
+  <footer>
+    <span>© 2026 Elmer Varquez</span>
+    <span><a href="https://github.com/el-varquez/bilang-flutter">Source on GitHub</a> · <a href="mailto:varquez.elmerjr@gmail.com">Contact</a></span>
+  </footer>
+
+</div>
+</body>
+</html>
