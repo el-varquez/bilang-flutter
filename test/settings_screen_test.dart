@@ -1,34 +1,14 @@
-import 'dart:async';
 import 'dart:io';
 
-import 'package:bilang/components/app_button.dart';
 import 'package:bilang/features/settings/screens/settings_screen.dart';
-import 'package:bilang/services/live_client.dart';
 import 'package:bilang/services/local_store.dart';
 import 'package:bilang/store/count_cubit.dart';
 import 'package:bilang/store/settings_cubit.dart';
 import 'package:bilang/theme/app_theme.dart';
-import 'package:bilang/theme/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive_ce.dart';
-
-class ProbeLive extends LiveClient {
-  ProbeLive(super.storage);
-
-  final List<String> probed = [];
-  bool answer = true;
-  Completer<bool>? gate;
-
-  @override
-  Future<bool> probe(String url) async {
-    probed.add(url);
-    final held = gate;
-    if (held != null) return held.future;
-    return answer;
-  }
-}
 
 Future<void> settleThroughStorage(
   WidgetTester tester,
@@ -50,7 +30,6 @@ void main() {
   late LocalStore storage;
   late SettingsCubit settings;
   late CountCubit counts;
-  late ProbeLive live;
 
   setUp(() async {
     dir = await Directory.systemTemp.createTemp('bilang_test_');
@@ -60,11 +39,9 @@ void main() {
     settings = SettingsCubit(storage)..hydrate();
     counts = CountCubit(storage);
     await counts.hydrate();
-    live = ProbeLive(storage);
   });
 
   tearDown(() async {
-    live.dispose();
     await settings.close();
     await counts.close();
     await Hive.close();
@@ -78,7 +55,7 @@ void main() {
         BlocProvider<SettingsCubit>.value(value: settings),
         BlocProvider<CountCubit>.value(value: counts),
       ],
-      child: Scaffold(body: SettingsScreen(live: live)),
+      child: const Scaffold(body: SettingsScreen()),
     ),
   );
 
@@ -252,120 +229,6 @@ void main() {
     expect(settings.state.liveUrl, isEmpty);
     expect(storage.liveUrl, isEmpty);
     expect(find.text('CONNECT'), findsNothing);
-  });
-
-  testWidgets('testing the endpoint reports a good connection', (
-    tester,
-  ) async {
-    await tester.pumpWidget(host());
-    await tester.pumpAndSettle();
-
-    await tapLive(tester, find.text('Live connection'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byType(TextField).last,
-      'http://192.168.1.10:9000/scans',
-    );
-    await tester.pump();
-    await tapLive(tester, find.text('TEST CONNECTION'));
-    await tester.pumpAndSettle();
-
-    expect(live.probed, ['http://192.168.1.10:9000/scans']);
-    final line = tester.widget<Text>(
-      find.text('Connected — the endpoint answered OK'),
-    );
-    expect(line.style?.color, Tokens.confirm);
-    expect(settings.state.liveOn, isFalse);
-  });
-
-  testWidgets('testing the endpoint reports a dead one', (tester) async {
-    live.answer = false;
-    await tester.pumpWidget(host());
-    await tester.pumpAndSettle();
-
-    await tapLive(tester, find.text('Live connection'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byType(TextField).last,
-      'http://192.168.1.10:9000/scans',
-    );
-    await tester.pump();
-    await tapLive(tester, find.text('TEST CONNECTION'));
-    await tester.pumpAndSettle();
-
-    final line = tester.widget<Text>(
-      find.text('No answer — check the address and port'),
-    );
-    expect(line.style?.color, Tokens.gold);
-  });
-
-  testWidgets('the test button waits for an endpoint', (tester) async {
-    await tester.pumpWidget(host());
-    await tester.pumpAndSettle();
-
-    await tapLive(tester, find.text('Live connection'));
-    await tester.pumpAndSettle();
-
-    final button = tester.widget<AppButton>(
-      find.widgetWithText(AppButton, 'TEST CONNECTION'),
-    );
-    expect(button.onPressed, isNull);
-    expect(live.probed, isEmpty);
-  });
-
-  testWidgets('a running test holds the button and says so', (tester) async {
-    live.gate = Completer<bool>();
-    await tester.pumpWidget(host());
-    await tester.pumpAndSettle();
-
-    await tapLive(tester, find.text('Live connection'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byType(TextField).last,
-      'http://192.168.1.10:9000/scans',
-    );
-    await tester.pump();
-    await tapLive(tester, find.text('TEST CONNECTION'));
-
-    expect(find.text('Testing…'), findsOneWidget);
-    final button = tester.widget<AppButton>(
-      find.widgetWithText(AppButton, 'TEST CONNECTION'),
-    );
-    expect(button.onPressed, isNull);
-
-    live.gate!.complete(true);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Connected — the endpoint answered OK'), findsOneWidget);
-  });
-
-  testWidgets('editing the endpoint clears the last test result', (
-    tester,
-  ) async {
-    await tester.pumpWidget(host());
-    await tester.pumpAndSettle();
-
-    await tapLive(tester, find.text('Live connection'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byType(TextField).last,
-      'http://192.168.1.10:9000/scans',
-    );
-    await tester.pump();
-    await tapLive(tester, find.text('TEST CONNECTION'));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(
-      find.byType(TextField).last,
-      'http://192.168.1.11:9000/scans',
-    );
-    await tester.pump();
-
-    expect(find.text('Connected — the endpoint answered OK'), findsNothing);
-    expect(
-      find.text('Nothing leaves the phone until you connect'),
-      findsOneWidget,
-    );
   });
 
   testWidgets('deleting everything asks first and then empties storage', (

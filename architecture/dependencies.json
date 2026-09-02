@@ -12,8 +12,7 @@
       "excel",
       "share_plus",
       "path_provider",
-      "file_picker",
-      "http"
+      "file_picker"
     ],
     "dev_dependencies": [
       "flutter_test",
