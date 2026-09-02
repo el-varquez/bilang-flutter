@@ -14,7 +14,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "io.github.elvarquez.bilang"
+    namespace = "io.github.bilang"
     compileSdk = flutter.compileSdkVersion
 
     compileOptions {
@@ -23,7 +23,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.elvarquez.bilang"
+        applicationId = "io.github.bilang"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24

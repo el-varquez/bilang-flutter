@@ -1,4 +1,4 @@
-package io.github.elvarquez.bilang
+package io.github.bilang
 
 import io.flutter.embedding.android.FlutterActivity
 
