@@ -5,29 +5,21 @@ class SettingsState extends Equatable {
     this.vibrate = true,
     this.beep = false,
     this.batchSize = 0,
-    this.liveUrl = '',
   });
 
   final bool vibrate;
   final bool beep;
   final int batchSize;
-  final String liveUrl;
 
   bool get batchOn => batchSize > 1;
-  bool get liveOn => liveUrl.isNotEmpty;
 
-  SettingsState copyWith({
-    bool? vibrate,
-    bool? beep,
-    int? batchSize,
-    String? liveUrl,
-  }) => SettingsState(
-    vibrate: vibrate ?? this.vibrate,
-    beep: beep ?? this.beep,
-    batchSize: batchSize ?? this.batchSize,
-    liveUrl: liveUrl ?? this.liveUrl,
-  );
+  SettingsState copyWith({bool? vibrate, bool? beep, int? batchSize}) =>
+      SettingsState(
+        vibrate: vibrate ?? this.vibrate,
+        beep: beep ?? this.beep,
+        batchSize: batchSize ?? this.batchSize,
+      );
 
   @override
-  List<Object?> get props => [vibrate, beep, batchSize, liveUrl];
+  List<Object?> get props => [vibrate, beep, batchSize];
 }

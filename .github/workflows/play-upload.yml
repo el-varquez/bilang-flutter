@@ -1,0 +1,62 @@
+name: Play Upload
+
+on:
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Upload secrets present?
+        id: gate
+        env:
+          KEYSTORE: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: echo "ok=$([ -n "$KEYSTORE" ] && [ -n "$PLAY_JSON" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Java
+        if: steps.gate.outputs.ok == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        if: steps.gate.outputs.ok == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.1
+          channel: stable
+          cache: true
+
+      - name: Restore signing
+        if: steps.gate.outputs.ok == 'true'
+        run: |
+          echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 --decode > android/upload.jks
+          {
+            echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}"
+            echo "keyPassword=${{ secrets.KEY_PASSWORD }}"
+            echo "keyAlias=${{ secrets.KEY_ALIAS }}"
+            echo "storeFile=../upload.jks"
+          } > android/key.properties
+
+      - name: Pub get
+        if: steps.gate.outputs.ok == 'true'
+        run: flutter pub get
+
+      - name: Build signed bundle
+        if: steps.gate.outputs.ok == 'true'
+        run: flutter build appbundle --release
+
+      - name: Upload to the internal track
+        if: steps.gate.outputs.ok == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: io.github.elvarquez.bilang
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed

@@ -24,7 +24,6 @@ void main() {
     expect(store.vibrate, isTrue);
     expect(store.beep, isFalse);
     expect(store.batchSize, 0);
-    expect(store.liveUrl, '');
     expect(store.activeCountId, isNull);
   });
 
@@ -36,7 +35,6 @@ void main() {
     await store.setVibrate(false);
     await store.setBeep(true);
     await store.setBatchSize(10);
-    await store.setLiveUrl('http://192.168.1.4:5103/api/scans');
     await store.setActiveCountId('s1');
     await store.close();
 
@@ -44,7 +42,6 @@ void main() {
     expect(reopened.vibrate, isFalse);
     expect(reopened.beep, isTrue);
     expect(reopened.batchSize, 10);
-    expect(reopened.liveUrl, 'http://192.168.1.4:5103/api/scans');
     expect(reopened.activeCountId, 's1');
   });
 

@@ -15,7 +15,6 @@ class LocalStore {
   static const String _keyVibrate = 'vibrate';
   static const String _keyBeep = 'beep';
   static const String _keyBatchSize = 'batchSize';
-  static const String _keyLiveUrl = 'liveUrl';
   static const String _keyActiveCountId = 'activeCountId';
 
   final Box _settings;
@@ -77,9 +76,6 @@ class LocalStore {
 
   int get batchSize => _settings.get(_keyBatchSize, defaultValue: 0) as int;
   Future<void> setBatchSize(int value) => _settings.put(_keyBatchSize, value);
-
-  String get liveUrl => _settings.get(_keyLiveUrl, defaultValue: '') as String;
-  Future<void> setLiveUrl(String value) => _settings.put(_keyLiveUrl, value);
 
   String? get activeCountId => _settings.get(_keyActiveCountId) as String?;
   Future<void> setActiveCountId(String? value) async {
