@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../../services/live_client.dart';
 import '../../../theme/app_text.dart';
 import '../../../theme/tokens.dart';
 import '../services/scan_armer.dart';
 
 class Viewfinder extends StatefulWidget {
-  const Viewfinder({
-    super.key,
-    required this.state,
-    this.live = LiveStatus.off,
-    this.preview,
-  });
+  const Viewfinder({super.key, required this.state, this.preview});
 
   final ScanArmState state;
-  final LiveStatus live;
   final Widget? preview;
 
   @override
@@ -66,29 +59,6 @@ class _ViewfinderState extends State<Viewfinder>
             if (preview != null && !armed)
               ColoredBox(color: Tokens.ink.withValues(alpha: 0.45)),
             _Corners(armed: armed),
-            if (widget.live != LiveStatus.off)
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: widget.live == LiveStatus.live
-                          ? Tokens.confirm
-                          : Tokens.gold,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      '● LIVE',
-                      style: AppText.label.copyWith(color: Tokens.paper),
-                    ),
-                  ),
-                ),
-              ),
             if (armed)
               AnimatedBuilder(
                 animation: _sweep,

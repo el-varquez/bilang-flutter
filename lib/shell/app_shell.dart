@@ -5,7 +5,6 @@ import '../features/counts/screens/counts_screen.dart';
 import '../features/export/screens/export_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
 import '../services/file_delivery.dart';
-import '../services/live_client.dart';
 import '../services/local_store.dart';
 import '../theme/tokens.dart';
 
@@ -14,13 +13,11 @@ class AppShell extends StatefulWidget {
     super.key,
     required this.storage,
     required this.delivery,
-    required this.live,
     this.cameraEnabled = true,
   });
 
   final LocalStore storage;
   final FileDelivery delivery;
-  final LiveClient live;
   final bool cameraEnabled;
 
   @override
@@ -35,12 +32,11 @@ class _AppShellState extends State<AppShell> {
     final screens = <Widget>[
       CountScreen(
         storage: widget.storage,
-        live: widget.live,
         cameraEnabled: widget.cameraEnabled,
       ),
       const CountsScreen(),
       ExportScreen(delivery: widget.delivery),
-      SettingsScreen(live: widget.live),
+      const SettingsScreen(),
     ];
 
     return Scaffold(

@@ -10,7 +10,6 @@ import '../../../components/empty_state.dart';
 import '../../../components/new_count_dialog.dart';
 import '../../../components/swipe_delete_panel.dart';
 import '../../../services/feedback_service.dart';
-import '../../../services/live_client.dart';
 import '../../../services/local_store.dart';
 import '../../../store/count_cubit.dart';
 import '../../../store/count_state.dart';
@@ -28,12 +27,10 @@ class CountScreen extends StatefulWidget {
   const CountScreen({
     super.key,
     required this.storage,
-    required this.live,
     this.cameraEnabled = true,
   });
 
   final LocalStore storage;
-  final LiveClient live;
   final bool cameraEnabled;
 
   @override
@@ -56,7 +53,6 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    widget.live.refresh();
     HardwareKeyboard.instance.addHandler(_onHardwareKey);
     if (!widget.cameraEnabled) return;
     WidgetsBinding.instance.addObserver(this);
@@ -140,19 +136,7 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
   Future<void> _record(String barcode) async {
     final value = barcode.trim();
     if (value.isEmpty) return;
-    final cubit = context.read<CountCubit>();
-    final row = await cubit.recordScan(value, units: _units);
-    if (row != null) {
-      final session = cubit.state.active;
-      if (session != null) {
-        widget.live.send(
-          session: session.name,
-          barcode: row.barcode,
-          name: row.name,
-          qty: row.qty,
-        );
-      }
-    }
+    await context.read<CountCubit>().recordScan(value, units: _units);
     await _feedback.scanned();
     if (!mounted) return;
     setState(() => _flashBarcode = value);
@@ -237,14 +221,7 @@ class _CountScreenState extends State<CountScreen> with WidgetsBindingObserver {
                   padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
                   child: SizedBox(
                     height: 192,
-                    child: ValueListenableBuilder<LiveStatus>(
-                      valueListenable: widget.live.status,
-                      builder: (context, liveStatus, _) => Viewfinder(
-                        state: armState,
-                        live: liveStatus,
-                        preview: _preview(),
-                      ),
-                    ),
+                    child: Viewfinder(state: armState, preview: _preview()),
                   ),
                 ),
                 _wedge(open),

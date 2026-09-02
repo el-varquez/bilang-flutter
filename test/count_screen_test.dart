@@ -2,14 +2,10 @@ import 'dart:io';
 
 import 'package:bilang/components/app_button.dart';
 import 'package:bilang/features/count/components/count_row.dart';
-import 'package:bilang/features/count/components/viewfinder.dart';
 import 'package:bilang/features/count/screens/count_screen.dart';
-import 'package:bilang/features/count/services/scan_armer.dart';
-import 'package:bilang/services/live_client.dart';
 import 'package:bilang/services/local_store.dart';
 import 'package:bilang/store/count_cubit.dart';
 import 'package:bilang/theme/app_theme.dart';
-import 'package:bilang/theme/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,32 +27,10 @@ Future<void> settleThroughStorage(
   }
 }
 
-class RecordingLive extends LiveClient {
-  RecordingLive(super.storage);
-
-  final List<Map<String, Object?>> sent = [];
-
-  @override
-  void send({
-    required String session,
-    required String barcode,
-    String? name,
-    required int qty,
-  }) {
-    sent.add({
-      'session': session,
-      'barcode': barcode,
-      'name': name,
-      'qty': qty,
-    });
-  }
-}
-
 void main() {
   late Directory dir;
   late LocalStore storage;
   late CountCubit cubit;
-  late RecordingLive live;
 
   setUp(() async {
     dir = await Directory.systemTemp.createTemp('bilang_test_');
@@ -65,11 +39,9 @@ void main() {
     await storage.hydrate();
     cubit = CountCubit(storage);
     await cubit.hydrate();
-    live = RecordingLive(storage);
   });
 
   tearDown(() async {
-    live.dispose();
     await cubit.close();
     await Hive.close();
     await dir.delete(recursive: true);
@@ -79,9 +51,7 @@ void main() {
     theme: AppTheme.build(),
     home: BlocProvider<CountCubit>.value(
       value: cubit,
-      child: Scaffold(
-        body: CountScreen(storage: storage, live: live, cameraEnabled: false),
-      ),
+      child: Scaffold(body: CountScreen(storage: storage, cameraEnabled: false)),
     ),
   );
 
@@ -453,73 +423,5 @@ void main() {
 
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.enabled, isTrue);
-  });
-
-  testWidgets('a scan is handed to the live client with the row total', (
-    tester,
-  ) async {
-    await tester.runAsync(
-      () => cubit.startCount('Bodega count', at: DateTime(2026, 8, 27)),
-    );
-    await tester.pumpWidget(host());
-    await tester.pumpAndSettle();
-
-    await submit(tester, '4800888812345');
-    await settleThroughStorage(tester, () => cubit.state.active!.units == 1);
-    await submit(tester, '4800888812345');
-    await settleThroughStorage(tester, () => cubit.state.active!.units == 2);
-
-    expect(live.sent, hasLength(2));
-    expect(live.sent.first['session'], 'Bodega count');
-    expect(live.sent.first['barcode'], '4800888812345');
-    expect(live.sent.first['qty'], 1);
-    expect(live.sent.last['qty'], 2);
-  });
-
-  testWidgets('the live pill shows when an endpoint is on file', (
-    tester,
-  ) async {
-    await tester.runAsync(() async {
-      await storage.setLiveUrl('http://192.168.1.20:9000/scans');
-      await cubit.startCount('Bodega count', at: DateTime(2026, 8, 27));
-    });
-    await tester.pumpWidget(host());
-    await tester.pumpAndSettle();
-
-    expect(find.text('● LIVE'), findsOneWidget);
-  });
-
-  testWidgets('no endpoint, no pill', (tester) async {
-    await tester.runAsync(
-      () => cubit.startCount('Bodega count', at: DateTime(2026, 8, 27)),
-    );
-    await tester.pumpWidget(host());
-    await tester.pumpAndSettle();
-
-    expect(find.text('● LIVE'), findsNothing);
-  });
-
-  testWidgets('a retrying connection turns the pill gold', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.build(),
-        home: const Scaffold(
-          body: SizedBox(
-            height: 192,
-            child: Viewfinder(
-              state: ScanArmState.idle,
-              live: LiveStatus.retrying,
-            ),
-          ),
-        ),
-      ),
-    );
-
-    final pill = tester.widget<Container>(
-      find
-          .ancestor(of: find.text('● LIVE'), matching: find.byType(Container))
-          .first,
-    );
-    expect((pill.decoration! as BoxDecoration).color, Tokens.gold);
   });
 }

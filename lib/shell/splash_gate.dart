@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../services/file_delivery.dart';
-import '../services/live_client.dart';
 import '../services/local_store.dart';
 import '../store/count_cubit.dart';
 import '../store/settings_cubit.dart';
@@ -26,7 +25,6 @@ class SplashGate extends StatefulWidget {
 class _SplashGateState extends State<SplashGate> {
   CountCubit? _counts;
   SettingsCubit? _settings;
-  late final LiveClient _live = LiveClient(widget.store);
 
   @override
   void initState() {
@@ -57,7 +55,6 @@ class _SplashGateState extends State<SplashGate> {
 
   @override
   void dispose() {
-    _live.dispose();
     _counts?.close();
     _settings?.close();
     super.dispose();
@@ -76,7 +73,6 @@ class _SplashGateState extends State<SplashGate> {
       child: AppShell(
         storage: widget.store,
         delivery: const PlatformFileDelivery(),
-        live: _live,
         cameraEnabled: widget.cameraEnabled,
       ),
     );

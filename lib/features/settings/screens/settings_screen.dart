@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../components/app_button.dart';
 import '../../../components/app_toast.dart';
 import '../../../components/setting_row.dart';
-import '../../../services/live_client.dart';
 import '../../../store/count_cubit.dart';
 import '../../../store/settings_cubit.dart';
 import '../../../store/settings_state.dart';
@@ -14,9 +13,7 @@ import '../../../theme/app_text.dart';
 import '../components/settings_prompts.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key, required this.live});
-
-  final LiveClient live;
+  const SettingsScreen({super.key});
 
   static String batchHelp(SettingsState state) => state.batchOn
       ? 'On — one scan adds ${state.batchSize} units. Tap to turn off.'
@@ -55,7 +52,7 @@ class SettingsScreen extends StatelessWidget {
       showAppToast(context, 'Live connection off — scans stay on this phone');
       return;
     }
-    final url = await askLiveUrl(context, state.liveUrl, probe: live.probe);
+    final url = await askLiveUrl(context, state.liveUrl);
     if (url == null || url.trim().isEmpty) return;
     await cubit.setLiveUrl(url);
     if (!context.mounted) return;
