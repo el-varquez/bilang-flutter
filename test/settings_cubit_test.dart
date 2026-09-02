@@ -38,8 +38,6 @@ void main() {
     expect(cubit.state.beep, isFalse);
     expect(cubit.state.batchSize, 0);
     expect(cubit.state.batchOn, isFalse);
-    expect(cubit.state.liveUrl, '');
-    expect(cubit.state.liveOn, isFalse);
   });
 
   test('each toggle emits a new state and writes through', () async {
@@ -61,18 +59,8 @@ void main() {
     expect(cubit.state.batchOn, isFalse);
   });
 
-  test('the live connection is on only with a url', () async {
-    await cubit.setLiveUrl('http://192.168.1.4:5103/api/scans');
-    expect(cubit.state.liveOn, isTrue);
-
-    await cubit.setLiveUrl('');
-    expect(cubit.state.liveOn, isFalse);
-    expect(storage.liveUrl, '');
-  });
-
   test('settings survive a reopen', () async {
     await cubit.setBatchSize(24);
-    await cubit.setLiveUrl('http://example.test/scans');
     await cubit.close();
     await storage.close();
 
@@ -81,7 +69,6 @@ void main() {
     final revived = SettingsCubit(reopened)..hydrate();
 
     expect(revived.state.batchSize, 24);
-    expect(revived.state.liveUrl, 'http://example.test/scans');
     await revived.close();
   });
 

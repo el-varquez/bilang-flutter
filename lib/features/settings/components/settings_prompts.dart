@@ -13,26 +13,10 @@ Future<int?> askBatchSize(BuildContext context, int current) async {
       initial: current > 1 ? '$current' : '10',
       helperText: '2 or more — a normal scan already adds 1',
       confirmLabel: 'SET',
-      digitsOnly: true,
     ),
   );
   if (typed == null) return null;
   return int.tryParse(typed.trim()) ?? 0;
-}
-
-Future<String?> askLiveUrl(BuildContext context, String current) {
-  return showAppDialog<String>(
-    context: context,
-    dialog: _SettingsPrompt(
-      title: 'Live connection',
-      subtitle: 'POST endpoint — every scan is sent here as JSON',
-      initial: current,
-      hintText: 'Enter your endpoint',
-      helperText: 'Nothing leaves the phone until you connect',
-      confirmLabel: 'CONNECT',
-      digitsOnly: false,
-    ),
-  );
 }
 
 Future<bool> confirmDeleteAll(BuildContext context) async {
@@ -50,8 +34,6 @@ class _SettingsPrompt extends StatefulWidget {
     required this.initial,
     required this.helperText,
     required this.confirmLabel,
-    required this.digitsOnly,
-    this.hintText,
   });
 
   final String title;
@@ -59,8 +41,6 @@ class _SettingsPrompt extends StatefulWidget {
   final String initial;
   final String helperText;
   final String confirmLabel;
-  final bool digitsOnly;
-  final String? hintText;
 
   @override
   State<_SettingsPrompt> createState() => _SettingsPromptState();
@@ -95,18 +75,13 @@ class _SettingsPromptState extends State<_SettingsPrompt> {
       child: TextField(
         controller: _controller,
         autofocus: true,
-        keyboardType: widget.digitsOnly
-            ? TextInputType.number
-            : TextInputType.url,
-        inputFormatters: widget.digitsOnly
-            ? [FilteringTextInputFormatter.digitsOnly]
-            : null,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         autocorrect: false,
         enableSuggestions: false,
         onSubmitted: (_) => _confirm(),
         decoration: InputDecoration(
           border: const OutlineInputBorder(),
-          hintText: widget.hintText,
           helperText: widget.helperText,
           helperMaxLines: 2,
         ),

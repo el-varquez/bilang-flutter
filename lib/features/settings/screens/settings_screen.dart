@@ -20,11 +20,6 @@ class SettingsScreen extends StatelessWidget {
       : 'Off — every scan adds 1. On: the app asks how many units one '
             'scan adds.';
 
-  static String liveHelp(SettingsState state) => state.liveOn
-      ? 'On — every scan POSTs to ${state.liveUrl}. Tap to disconnect.'
-      : 'Off — scans stay on this phone. On: every scan POSTs to your '
-            'system’s endpoint the moment it reads.';
-
   Future<void> _toggleBatch(BuildContext context, SettingsState state) async {
     final cubit = context.read<SettingsCubit>();
     if (state.batchOn) {
@@ -42,21 +37,6 @@ class SettingsScreen extends StatelessWidget {
     await cubit.setBatchSize(size);
     if (!context.mounted) return;
     showAppToast(context, 'Batch scan on — one scan adds $size units');
-  }
-
-  Future<void> _toggleLive(BuildContext context, SettingsState state) async {
-    final cubit = context.read<SettingsCubit>();
-    if (state.liveOn) {
-      await cubit.setLiveUrl('');
-      if (!context.mounted) return;
-      showAppToast(context, 'Live connection off — scans stay on this phone');
-      return;
-    }
-    final url = await askLiveUrl(context, state.liveUrl);
-    if (url == null || url.trim().isEmpty) return;
-    await cubit.setLiveUrl(url);
-    if (!context.mounted) return;
-    showAppToast(context, 'Live — every scan now POSTs to your system');
   }
 
   Future<void> _deleteEverything(BuildContext context) async {
@@ -113,12 +93,6 @@ class SettingsScreen extends StatelessWidget {
                     help: batchHelp(state),
                     value: state.batchOn,
                     onChanged: (_) => unawaited(_toggleBatch(context, state)),
-                  ),
-                  SettingRow(
-                    name: 'Live connection',
-                    help: liveHelp(state),
-                    value: state.liveOn,
-                    onChanged: (_) => unawaited(_toggleLive(context, state)),
                   ),
                   const SizedBox(height: 8),
                   AppButton(

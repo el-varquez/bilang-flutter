@@ -14,7 +14,6 @@ class SettingsCubit extends Cubit<SettingsState> {
         vibrate: _storage.vibrate,
         beep: _storage.beep,
         batchSize: _storage.batchSize,
-        liveUrl: _storage.liveUrl,
       ),
     );
   }
@@ -33,12 +32,6 @@ class SettingsCubit extends Cubit<SettingsState> {
     final size = value > 1 ? value : 0;
     await _storage.setBatchSize(size);
     emit(state.copyWith(batchSize: size));
-  }
-
-  Future<void> setLiveUrl(String value) async {
-    final url = value.trim();
-    await _storage.setLiveUrl(url);
-    emit(state.copyWith(liveUrl: url));
   }
 
   Future<void> deleteAllCounts() => _storage.deleteAllCounts();

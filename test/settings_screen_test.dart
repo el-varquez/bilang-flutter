@@ -64,7 +64,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('it lists the four settings with their help text', (
+  testWidgets('it lists the three settings with their help text', (
     tester,
   ) async {
     await tester.pumpWidget(host());
@@ -89,14 +89,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('Live connection'), findsOneWidget);
-    expect(
-      find.text(
-        'Off — scans stay on this phone. On: every scan POSTs to your '
-        'system’s endpoint the moment it reads.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Live connection'), findsNothing);
     expect(find.text('Delete all counts on this phone'), findsOneWidget);
   });
 
@@ -186,49 +179,6 @@ void main() {
     expect(settings.state.batchOn, isFalse);
     expect(storage.batchSize, 0);
     expect(find.text('SET'), findsNothing);
-  });
-
-  testWidgets('turning the live connection on asks for the endpoint', (
-    tester,
-  ) async {
-    await tester.pumpWidget(host());
-    await tester.pumpAndSettle();
-
-    await tapLive(tester, find.text('Live connection'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Enter your endpoint'), findsOneWidget);
-
-    await tester.enterText(
-      find.byType(TextField).last,
-      'http://192.168.1.4:5103/api/scans',
-    );
-    await tapLive(tester, find.text('CONNECT'));
-    await settleThroughStorage(tester, () => settings.state.liveOn);
-
-    expect(settings.state.liveUrl, 'http://192.168.1.4:5103/api/scans');
-    expect(
-      find.text(
-        'On — every scan POSTs to http://192.168.1.4:5103/api/scans. '
-        'Tap to disconnect.',
-      ),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('turning the live connection off needs no prompt', (
-    tester,
-  ) async {
-    await tester.runAsync(() => settings.setLiveUrl('http://example.test/s'));
-    await tester.pumpWidget(host());
-    await tester.pumpAndSettle();
-
-    await tapLive(tester, find.text('Live connection'));
-    await settleThroughStorage(tester, () => !settings.state.liveOn);
-
-    expect(settings.state.liveUrl, isEmpty);
-    expect(storage.liveUrl, isEmpty);
-    expect(find.text('CONNECT'), findsNothing);
   });
 
   testWidgets('deleting everything asks first and then empties storage', (
