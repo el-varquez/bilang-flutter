@@ -1,0 +1,80 @@
+name: Release APK
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Signing secrets present?
+        id: gate
+        env:
+          KEYSTORE: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+        run: echo "ok=$([ -n "$KEYSTORE" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Java
+        if: steps.gate.outputs.ok == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        if: steps.gate.outputs.ok == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.1
+          channel: stable
+          cache: true
+
+      - name: Restore signing
+        if: steps.gate.outputs.ok == 'true'
+        run: |
+          echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 --decode > android/upload.jks
+          {
+            echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}"
+            echo "keyPassword=${{ secrets.KEY_PASSWORD }}"
+            echo "keyAlias=${{ secrets.KEY_ALIAS }}"
+            echo "storeFile=../upload.jks"
+          } > android/key.properties
+
+      - name: Pub get
+        if: steps.gate.outputs.ok == 'true'
+        run: flutter pub get
+
+      - name: Build signed APK
+        if: steps.gate.outputs.ok == 'true'
+        run: flutter build apk --release
+
+      - name: Build signed bundle
+        if: steps.gate.outputs.ok == 'true'
+        run: flutter build appbundle --release
+
+      - name: Read version
+        if: steps.gate.outputs.ok == 'true'
+        id: version
+        run: echo "version=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        if: steps.gate.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}-build${{ github.run_number }}" \
+            build/app/outputs/flutter-apk/app-release.apk \
+            build/app/outputs/bundle/release/app-release.aab \
+            --title "Bilang ${{ steps.version.outputs.version }} (build ${{ github.run_number }})" \
+            --notes "Signed release build from ${{ github.sha }}." \
+            --prerelease
