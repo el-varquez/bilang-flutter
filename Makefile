@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup run release analyze test gates check-architecture check-design check-conventions doctor devices apk clean reset
+.PHONY: help setup run release analyze test gates check-architecture check-design check-conventions doctor devices apk bundle clean reset
 
 help:
 	@echo Bilang - make targets
@@ -10,6 +10,7 @@ help:
 	@echo   make analyze    static analysis
 	@echo   make test       unit + widget tests
 	@echo   make apk        build the release APK for sideloading
+	@echo   make bundle     build the signed release bundle for Play
 	@echo   make devices    list connected devices
 	@echo   make doctor     flutter doctor -v
 	@echo   make clean      drop build output
@@ -44,6 +45,9 @@ gates: analyze test check-architecture check-design
 
 apk:
 	flutter build apk --release
+
+bundle:
+	flutter build appbundle --release
 
 devices:
 	flutter devices
